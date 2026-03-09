@@ -70,7 +70,7 @@ export function SearchFilter({ onSearch, onReset, loading = false }: SearchFilte
           <input
             id="panel-name"
             type="text"
-            placeholder="e.g., Tech Lead, Manager"
+            placeholder="e.g., Rakesh Kanna"
             value={filters.panelName}
             onChange={(e) => handleInputChange('panelName', e.target.value)}
             className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-transparent transition-all backdrop-blur-sm"
@@ -85,7 +85,7 @@ export function SearchFilter({ onSearch, onReset, loading = false }: SearchFilte
           <input
             id="candidate-name"
             type="text"
-            placeholder="e.g., John Doe"
+            placeholder="e.g., Arun Kumar"
             value={filters.candidateName}
             onChange={(e) => handleInputChange('candidateName', e.target.value)}
             className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-transparent transition-all backdrop-blur-sm"

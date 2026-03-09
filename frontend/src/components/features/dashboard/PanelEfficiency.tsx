@@ -38,9 +38,9 @@ export function PanelEfficiency() {
         <div className="bg-gradient-to-br from-accent-primary/5 to-accent-secondary/5 border border-border-primary rounded-card p-card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-metric-label text-text-secondary uppercase tracking-widest mb-2">Overall Average Score</p>
-              <p className="text-metric-value text-text-primary font-bold">{data.overallAverage}</p>
-              <p className="text-text-secondary text-sm mt-2">{data.totalPanels} panels evaluated</p>
+              <p className="text-metric-label text-text-secondary uppercase tracking-widest mb-2">Total Panel Evaluated</p>
+              <p className="text-metric-value text-text-primary font-bold">{data.totalPanels}</p>
+              <p className="text-text-secondary text-sm mt-2">Unique panels assessed</p>
             </div>
             <div className="bg-accent-primary/10 rounded-card-lg p-3 flex-shrink-0">
               <TrendingUp className="w-6 h-6 text-accent-primary" />

@@ -9,26 +9,36 @@ import { PanelEfficiency } from '@/components/features/dashboard/PanelEfficiency
 import { SearchFilter, type SearchFilters } from '@/components/features/dashboard/SearchFilter';
 import { EvaluationsList } from '@/components/features/dashboard/EvaluationsList';
 import { AppShell } from '@/components/layout/AppShell';
-import type { SearchResponse, DashboardEvaluation } from '@/types/dashboard.types';
+import type { SearchResponse } from '@/types/dashboard.types';
 
 export default function DashboardPage() {
   const { stats, loading, error, fetchStats } = useDashboardStore();
   const [searchResults, setSearchResults] = useState<SearchResponse | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [totalPanels, setTotalPanels] = useState(0);
 
   useEffect(() => {
     fetchStats();
-    // Load all evaluations by default
     loadAllEvaluations();
+    loadTotalPanels();
   }, [fetchStats]);
+
+  const loadTotalPanels = async () => {
+    try {
+      const efficiency = await dashboardApi.fetchPanelEfficiency();
+      setTotalPanels(efficiency?.totalPanels ?? 0);
+    } catch {
+      setTotalPanels(0);
+    }
+  };
 
   const loadAllEvaluations = async () => {
     setSearchLoading(true);
     try {
       const results = await dashboardApi.searchEvaluations();
       setSearchResults(results);
-      setHasSearched(false); // Don't mark as "searched", just showing default list
+      setHasSearched(false);
     } catch (err) {
       console.error('Failed to load evaluations:', err);
     } finally {
@@ -60,30 +70,27 @@ export default function DashboardPage() {
     fetchStats();
   };
 
-  // Determine which evaluations to display
   const displayEvaluations = searchResults ? searchResults.evaluations : [];
-  const displayStats = hasSearched && searchResults ? 
-    {
-      totalEvaluations: searchResults.totalEvaluations,
-      averageScore: searchResults.averageScore,
-      scoreDistribution: searchResults.scoreDistribution,
-      lastEvaluationDate: stats?.lastEvaluationDate || new Date().toISOString().split('T')[0],
-      evaluationsThisWeek: stats?.evaluationsThisWeek || 0
-    }
+  const displayStats = hasSearched && searchResults
+    ? {
+        totalEvaluations: searchResults.totalEvaluations,
+        averageScore: searchResults.averageScore,
+        scoreDistribution: searchResults.scoreDistribution,
+      }
     : stats;
 
   return (
     <AppShell>
       <main className="min-h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" role="main" aria-label="Dashboard">
-        {/* Header */}
+        {/* Lean Header */}
         <div className="bg-slate-800/40 border-b border-slate-700/50 backdrop-blur-sm">
-          <div className="max-w-7xl mx-auto px-8 py-10">
+          <div className="max-w-7xl mx-auto px-8 py-3">
             <DashboardHeader />
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-8 py-12 space-y-8">
+        <div className="max-w-7xl mx-auto px-8 py-6 space-y-5">
           {/* Error Alert */}
           {error && (
             <div className="bg-red-900/20 border border-red-500/50 text-red-300 px-6 py-4 rounded-lg backdrop-blur-sm" role="alert">
@@ -92,61 +99,56 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Quick Stats Grid - 4 Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Quick Stats Grid — 3 compact cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <QuickStatsCards
               totalEvaluations={displayStats?.totalEvaluations}
-              averageScore={displayStats?.averageScore}
-              lastEvaluationDate={displayStats?.lastEvaluationDate}
-              evaluationsThisWeek={displayStats?.evaluationsThisWeek}
+              averageScore={displayStats?.averageScore ?? 0}
+              totalPanels={totalPanels}
               loading={loading || searchLoading}
             />
           </div>
 
-          {/* Main Content Grid - 2 Columns */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Panel Efficiency Card */}
-            <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-8 shadow-xl hover:shadow-2xl hover:border-slate-600/70 transition-all duration-300 backdrop-blur-sm">
-              <PanelEfficiency />
-            </div>
-
-            {/* Score Distribution Card */}
-            <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-8 shadow-xl hover:shadow-2xl hover:border-slate-600/70 transition-all duration-300 backdrop-blur-sm">
-              <ScoreDistribution data={displayStats?.scoreDistribution} loading={loading || searchLoading} />
-            </div>
-          </div>
-
-          {/* Search and Filter Card */}
-          <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-8 shadow-xl hover:shadow-2xl hover:border-slate-600/70 transition-all duration-300 backdrop-blur-sm">
+          {/* Search and Filter */}
+          <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 shadow-xl backdrop-blur-sm">
             <SearchFilter onSearch={handleSearch} onReset={handleReset} loading={searchLoading} />
           </div>
 
-          {/* Evaluations List Card */}
-          <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-8 shadow-xl hover:shadow-2xl hover:border-slate-600/70 transition-all duration-300 backdrop-blur-sm">
-            <div className="mb-6">
-              <h3 className="text-heading text-text-primary font-semibold">
+          {/* All Evaluations */}
+          <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 shadow-xl backdrop-blur-sm">
+            <div className="mb-4">
+              <h3 className="text-base font-semibold text-text-primary">
                 {hasSearched ? 'Search Results' : 'All Evaluations'}
               </h3>
-              <p className="text-text-secondary text-sm mt-1">
+              <p className="text-text-secondary text-xs mt-0.5">
                 {displayEvaluations.length} evaluation{displayEvaluations.length !== 1 ? 's' : ''} found
               </p>
             </div>
-            <EvaluationsList 
+            <EvaluationsList
               evaluations={displayEvaluations}
               loading={searchLoading}
               pagination={hasSearched && searchResults ? searchResults.pagination : undefined}
             />
           </div>
 
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 shadow-xl hover:border-slate-600/70 transition-all duration-300 backdrop-blur-sm">
+              <PanelEfficiency />
+            </div>
+            <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 shadow-xl hover:border-slate-600/70 transition-all duration-300 backdrop-blur-sm">
+              <ScoreDistribution data={displayStats?.scoreDistribution} loading={loading || searchLoading} />
+            </div>
+          </div>
+
           {/* Recent Evaluations */}
           {!hasSearched && stats?.recentEvaluations && stats.recentEvaluations.length > 0 && (
-            <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-8 shadow-xl hover:shadow-2xl hover:border-slate-600/70 transition-all duration-300 backdrop-blur-sm">
+            <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 shadow-xl backdrop-blur-sm">
               <RecentEvaluations evaluations={stats.recentEvaluations} loading={loading} />
             </div>
           )}
         </div>
 
-        {/* Footer Spacing */}
         <div className="h-8"></div>
       </main>
     </AppShell>

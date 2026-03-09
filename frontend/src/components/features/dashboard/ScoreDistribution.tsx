@@ -1,4 +1,4 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import type { ScoreDistribution } from '@/types/chart.types';
 
 interface ScoreDistributionProps {
@@ -6,11 +6,25 @@ interface ScoreDistributionProps {
   loading?: boolean;
 }
 
+const BAR_COLORS = ['#ef4444', '#f97316', '#f59e0b', '#22c55e', '#10b981'];
+
+function CustomTooltip({ active, payload, label }: any) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 shadow-xl">
+        <p className="text-xs text-slate-400 mb-1">Score Range: <span className="text-white font-semibold">{label}</span></p>
+        <p className="text-sm font-bold text-orange-300">{payload[0].value} evaluation{payload[0].value !== 1 ? 's' : ''}</p>
+      </div>
+    );
+  }
+  return null;
+}
+
 export function ScoreDistribution({ data = [], loading = false }: ScoreDistributionProps) {
   if (loading) {
     return (
-      <div className="h-80 flex items-center justify-center" role="status" aria-label="Loading score distribution">
-        <p className="text-text-muted">Loading chart...</p>
+      <div className="h-64 flex items-center justify-center" role="status" aria-label="Loading score distribution">
+        <p className="text-text-muted text-sm">Loading chart...</p>
       </div>
     );
   }
@@ -26,35 +40,23 @@ export function ScoreDistribution({ data = [], loading = false }: ScoreDistribut
       ];
 
   return (
-    <div className="flex flex-col h-full" role="region" aria-label="Score distribution analysis">
-      <h3 className="text-heading text-text-primary font-semibold mb-6">Score Distribution</h3>
-      <div className="flex-1">
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart
-            data={chartData}
-            aria-label="Bar chart showing distribution of evaluation scores across score ranges"
-            role="img"
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" aria-hidden="true" />
-            <XAxis dataKey="range" stroke="#9ca3af" aria-label="Score range" />
-            <YAxis stroke="#9ca3af" aria-label="Number of evaluations" />
-            <Tooltip
-              contentStyle={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-              labelStyle={{ color: '#1f2937' }}
-              formatter={(value) => [value, 'Count']}
-              aria-label="Score distribution details"
-            />
-            <Legend aria-label="Chart legend" />
-            <Bar dataKey="count" fill="url(#colorGradient)" name="Evaluations" />
-            <defs>
-              <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#FF6B4A" />
-                <stop offset="100%" stopColor="#E84C3D" />
-              </linearGradient>
-            </defs>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+    <div className="flex flex-col" role="region" aria-label="Score distribution analysis">
+      <h3 className="text-base font-semibold text-text-primary mb-4">Score Distribution</h3>
+      <ResponsiveContainer width="100%" height={240}>
+        <BarChart data={chartData} barCategoryGap="30%">
+          <XAxis dataKey="range" stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
+          <YAxis stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} width={28} />
+          <Tooltip
+            cursor={false}
+            content={<CustomTooltip />}
+          />
+          <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+            {chartData.map((_, index) => (
+              <Cell key={index} fill={BAR_COLORS[index % BAR_COLORS.length]} fillOpacity={0.85} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }

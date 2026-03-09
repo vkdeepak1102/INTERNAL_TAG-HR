@@ -14,6 +14,12 @@ interface EvaluationsListProps {
   onPageChange?: (skip: number) => void;
 }
 
+function getScoreBadgeClass(score: number): string {
+  if (score >= 8) return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+  if (score >= 4) return 'bg-orange-500/20 text-orange-300 border border-orange-500/30';
+  return 'bg-red-500/20 text-red-300 border border-red-500/30';
+}
+
 export function EvaluationsList({
   evaluations = [],
   loading = false,
@@ -30,7 +36,6 @@ export function EvaluationsList({
   }, [currentPage, pagination?.limit, onPageChange]);
 
   const handleJobInterviewIdClick = (evaluationId: string) => {
-    // Navigate to results page with evaluation ID
     navigate(`/results/${evaluationId}`);
   };
 
@@ -54,20 +59,19 @@ export function EvaluationsList({
     <div className="border border-slate-700/50 rounded-xl overflow-hidden">
       <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
         <table className="w-full text-sm">
-          <thead className="bg-slate-700/30 border-b border-slate-700/50 sticky top-0 z-10">
-            <tr>
-              <th className="px-6 py-4 text-left font-bold text-white">Job Interview ID</th>
-              <th className="px-6 py-4 text-left font-bold text-white">Panel Name</th>
-              <th className="px-6 py-4 text-left font-bold text-white">Candidate Name</th>
-              <th className="px-6 py-4 text-left font-bold text-white">Evaluations</th>
-              <th className="px-6 py-4 text-left font-bold text-white">Average Score</th>
-              <th className="px-6 py-4 text-left font-bold text-white">Last Evaluation</th>
+          <thead className="sticky top-0 z-10" style={{ backgroundColor: '#1e293b' }}>
+            <tr className="border-b border-slate-700/50">
+              <th className="px-6 py-3 text-left font-bold text-white">Job Interview ID</th>
+              <th className="px-6 py-3 text-left font-bold text-white">Panel Name</th>
+              <th className="px-6 py-3 text-left font-bold text-white">Candidate Name</th>
+              <th className="px-6 py-3 text-left font-bold text-white">Evaluations</th>
+              <th className="px-6 py-3 text-left font-bold text-white">Average Score</th>
             </tr>
           </thead>
           <tbody>
             {evaluations.map((evaluation, idx) => (
               <tr key={idx} className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors last:border-b-0">
-                <td className="px-6 py-4 font-mono">
+                <td className="px-6 py-3 font-mono">
                   <button
                     onClick={() => handleJobInterviewIdClick(evaluation._id || evaluation.jobInterviewId)}
                     className="text-orange-400 hover:text-orange-300 underline font-semibold transition-colors"
@@ -76,15 +80,14 @@ export function EvaluationsList({
                     {evaluation.jobInterviewId}
                   </button>
                 </td>
-                <td className="px-6 py-4 text-white">{evaluation.panelName}</td>
-                <td className="px-6 py-4 text-white">{evaluation.candidateName}</td>
-                <td className="px-6 py-4 text-slate-300">{evaluation.evaluationCount || 1}</td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold bg-orange-500/20 text-orange-300">
+                <td className="px-6 py-3 text-white">{evaluation.panelName}</td>
+                <td className="px-6 py-3 text-white">{evaluation.candidateName}</td>
+                <td className="px-6 py-3 text-slate-300">{evaluation.evaluationCount || 1}</td>
+                <td className="px-6 py-3">
+                  <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold ${getScoreBadgeClass(evaluation.averageScore)}`}>
                     {evaluation.averageScore.toFixed(1)}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-slate-300">{evaluation.lastEvaluationDate}</td>
               </tr>
             ))}
           </tbody>

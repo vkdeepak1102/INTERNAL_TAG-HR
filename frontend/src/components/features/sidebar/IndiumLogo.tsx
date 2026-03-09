@@ -1,38 +1,39 @@
 export function IndiumLogo({ className = '' }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 165 48"
+      viewBox="0 0 168 48"
       className={className}
       xmlns="http://www.w3.org/2000/svg"
       aria-label="Indium"
       role="img"
     >
       <defs>
-        <linearGradient id="indOrange" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#C84B00" />
-          <stop offset="100%" stopColor="#FF8C00" />
+        <linearGradient id="indGrad" x1="0%" y1="0%" x2="60%" y2="100%">
+          <stop offset="0%" stopColor="#BF4300" />
+          <stop offset="55%" stopColor="#E55C00" />
+          <stop offset="100%" stopColor="#FF7400" />
         </linearGradient>
       </defs>
 
-      {/* I — vertical bar */}
-      <rect x="1" y="12" width="8" height="24" rx="1.5" fill="url(#indOrange)" />
+      {/* I — left pillar */}
+      <rect x="0" y="8" width="8" height="32" rx="1" fill="url(#indGrad)" />
 
-      {/* N — left vertical bar */}
-      <rect x="15" y="12" width="8" height="24" rx="1.5" fill="url(#indOrange)" />
-      {/* N — diagonal (top-left → bottom-right) */}
-      <polygon points="15,12 23,12 39,36 31,36" fill="url(#indOrange)" />
-      {/* N — right vertical bar */}
-      <rect x="31" y="12" width="8" height="24" rx="1.5" fill="url(#indOrange)" />
+      {/* N — left pillar */}
+      <rect x="14" y="8" width="8" height="32" rx="1" fill="url(#indGrad)" />
+      {/* N — broad diagonal wedge */}
+      <polygon points="14,8 22,8 40,40 32,40" fill="url(#indGrad)" />
+      {/* N — right pillar */}
+      <rect x="32" y="8" width="8" height="32" rx="1" fill="url(#indGrad)" />
 
-      {/* DIUM */}
+      {/* DIUM — white, clean weight */}
       <text
-        x="47"
-        y="33"
-        fill="rgba(255,255,255,0.50)"
-        fontFamily="system-ui, -apple-system, sans-serif"
-        fontSize="21"
-        fontWeight="700"
-        letterSpacing="1.5"
+        x="50"
+        y="36"
+        fill="rgba(255,255,255,0.82)"
+        fontFamily="system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
+        fontSize="22"
+        fontWeight="600"
+        letterSpacing="2"
       >
         DIUM
       </text>

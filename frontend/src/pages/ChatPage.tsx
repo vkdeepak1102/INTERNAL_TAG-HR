@@ -88,7 +88,7 @@ function SearchSettingsPanel({
   }
 
   return (
-    <div className="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-4 text-sm backdrop-blur-sm shadow-xl">
+    <div className="bg-[#0f1117] border border-slate-700/60 rounded-2xl p-4 text-sm shadow-2xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -520,13 +520,13 @@ export default function ChatPage() {
         {/* ── Input bar ── */}
         <div className="flex-shrink-0 border-t border-slate-700/50 bg-slate-800/40 backdrop-blur-sm">
           <div className="max-w-4xl mx-auto px-6 py-4">
-            <div className="relative flex items-end gap-3 bg-slate-800/60 border border-slate-700/60 hover:border-slate-600/80 focus-within:border-indigo-500/50 rounded-2xl px-4 py-3 transition-all duration-200">
+            <div className="relative flex items-end gap-3 bg-slate-800/60 border border-slate-700/60 rounded-2xl px-4 py-3">
               <textarea
                 ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask about panels, scores, candidates… (Enter to send)"
+                placeholder="Ask about panels, scores, candidates…"
                 rows={1}
                 disabled={isLoading}
                 className="flex-1 bg-transparent text-sm text-white placeholder-slate-500 resize-none outline-none leading-relaxed disabled:opacity-50 min-h-[24px] max-h-[160px]"

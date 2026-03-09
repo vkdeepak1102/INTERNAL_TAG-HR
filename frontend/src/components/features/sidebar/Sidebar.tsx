@@ -15,15 +15,15 @@ export function Sidebar() {
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Settings */}
-      <div className="pt-4 border-t border-white/[0.07]">
-        <SettingsButton />
+      {/* Indium branding — above Settings */}
+      <div className="pb-3 flex justify-center">
+        <IndiumLogo className="w-28 opacity-70 hover:opacity-100 transition-opacity duration-200" />
       </div>
 
-      {/* Footer — Indium branding */}
-      <footer className="pt-4 flex justify-center">
-        <IndiumLogo className="w-28 opacity-60 hover:opacity-90 transition-opacity" />
-      </footer>
+      {/* Settings */}
+      <div className="pt-3 border-t border-white/[0.07]">
+        <SettingsButton />
+      </div>
     </aside>
   );
 }

@@ -137,6 +137,18 @@ export const dashboardApi = {
     }
   },
 
+  async fetchRefinedJd(jobId: string): Promise<{ refinedJd: any; panelSummary: string | null }> {
+    try {
+      const resp = await apiClient.get(`/api/v1/panel/refined-jd/${jobId}`);
+      return {
+        refinedJd: resp.data?.refinedJd ?? null,
+        panelSummary: resp.data?.panelSummary ?? null,
+      };
+    } catch {
+      return { refinedJd: null, panelSummary: null };
+    }
+  },
+
   async fetchCachedEvaluation(evaluationId: string): Promise<any> {
     try {
       const resp = await apiClient.get(`/api/v1/panel/evaluation/${evaluationId}`);
@@ -181,6 +193,8 @@ export const dashboardApi = {
         l2RejectionReasons: body.l2RejectionReasons ?? [],
         l1Transcript: body.l1Transcript || '',
         evaluatedAt: body.evaluatedAt,
+        refinedJd: body.refinedJd ?? null,
+        panelSummary: body.panelSummary ?? null,
         scoreCategory: (body.score ?? 0) >= 8 ? 'Good' : (body.score ?? 0) >= 5 ? 'Moderate' : 'Poor'
       };
     } catch (error) {

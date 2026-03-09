@@ -3,6 +3,8 @@ import { SettingsModal } from '@/components/features/modals/SettingsModal';
 import { EvaluationHeader } from '@/components/features/evaluation/EvaluationHeader';
 import { ScoreCard } from '@/components/features/evaluation/ScoreCard';
 import DimensionGrid from '@/components/features/evaluation/DimensionGrid';
+import { JdSkillsCard } from '@/components/features/evaluation/JdSkillsCard';
+import { PanelSummaryCard } from '@/components/features/evaluation/PanelSummaryCard';
 import { L2ValidatorCard } from '@/components/features/l2-validation/L2ValidatorCard';
 import { EmptyState } from '@/components/common/EmptyState';
 import { useEvaluationStore } from '@/lib/stores/evaluation.store';
@@ -148,7 +150,16 @@ export default function ResultsPage() {
             </div>
           </section>
 
-          {/* Evidence Section - REMOVED (shown per-dimension in DimensionGrid) */}
+          {/* JD Skills + Panel Summary row */}
+          {(cachedEvaluation?.refinedJd || cachedEvaluation?.panelSummary) && (
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <JdSkillsCard refinedJd={cachedEvaluation.refinedJd} />
+              <PanelSummaryCard
+                summary={cachedEvaluation.panelSummary}
+                scoreCategory={displayScoreCategory}
+              />
+            </section>
+          )}
 
           {/* L2 Validation Section */}
           {displayL2Reasons.length > 0 && (

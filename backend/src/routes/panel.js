@@ -613,6 +613,8 @@ router.get('/evaluation/:id', async (req, res) => {
         l2Validation: evaluation.l2_validation,
         l2RejectionReasons: evaluation.l2_rejection_reasons || [],
         l1Transcript: evaluation.l1_transcript || '',
+        refinedJd: evaluation.refined_jd || null,
+        panelSummary: evaluation.panel_summary || null,
         evaluatedAt: evaluation.evaluated_at
       },
       timestamp: new Date().toISOString()
@@ -624,6 +626,38 @@ router.get('/evaluation/:id', async (req, res) => {
       details: error.message,
       timestamp: new Date().toISOString()
     });
+  }
+});
+
+/**
+ * GET /api/v1/panel/refined-jd/:jobId
+ * Fetch the refined JD skills classification for a given Job ID
+ */
+router.get('/refined-jd/:jobId', async (req, res) => {
+  try {
+    const { getDb } = require('../services/mongoClient');
+    const db = await getDb();
+    const evalCollection = db.collection('panel_evaluations');
+
+    const evaluation = await evalCollection
+      .find({ 'Job Interview ID': req.params.jobId })
+      .sort({ created_at: -1 })
+      .limit(1)
+      .next();
+
+    if (!evaluation) {
+      return res.status(404).json({ success: false, error: 'No evaluation found for this Job ID' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      jobId: req.params.jobId,
+      refinedJd: evaluation.refined_jd || null,
+      panelSummary: evaluation.panel_summary || null,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 

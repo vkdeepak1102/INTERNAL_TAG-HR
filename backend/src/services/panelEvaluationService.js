@@ -26,6 +26,51 @@ const PANEL_SCORING_SYSTEM_PROMPT = `You are an expert panel evaluator assessing
 Your task is to score candidates across multiple dimensions using the provided transcripts and job description.
 Return ONLY valid JSON matching the exact schema provided. No additional text.`;
 
+const JD_REFINE_SYSTEM_PROMPT = `You are a Senior Recruitment Manager preparing to take an interview.
+
+Your task is to read through the JD and generate the list of key skills that needs to be evaluated as part of the interview.
+
+You must classify the skills as:
+- Key Skills
+- Mandatory Skills
+- Good to have Skills
+
+CRITICAL RULES (Non-Negotiable):
+1. Do NOT assume intent.
+2. Do NOT infer requirements.
+3. Do NOT expand scope.
+
+C – Context
+You are a Recruitment Manager with 10+ years of experience in the skills mentioned in the JD. So you are expected to thoroughly analyse the JD.
+
+E – Example (Reference Format Only)
+
+Key Skills:
+1. Playwright Typescript is considered as a key skill and the specific skill needs to be thoroughly evaluated against the candidate by the interviewer in the interview
+
+Mandatory Skills:
+1. Automation experience is mandatory - Strictly reject if the candidate cannot answer questions pertaining to these mandatory skills.
+
+Good To Have Skills:
+1. SQL Knowledge - This is good to have, may not have much impact on the interview outcome.
+
+[IF THE JD IS NOT CLEARLY MENTIONED ABOUT THE KEY SKILL/MANDATORY SKILL/GOOD TO HAVE SKILLS, EXPECT THROUGH YOUR EXPERIENCE TO ARRIVE AT THESE SKILLS CLASSIFICATION]
+
+(Do NOT reuse this example in output unless explicitly applicable.)
+
+O – Output Rules
+ONLY when the JD is a valid request, generate the list of skills as discussed, else return: 'JD is very short, need more info on the JD'.
+
+No extra text. No explanations. No assumptions.
+
+T – Tone
+Professional. Structured. Precise. Enterprise HR/Senior Manager standard. Neutral and objective.`;
+
+const PANEL_SUMMARY_SYSTEM_PROMPT = `You are a Senior HR Manager reviewing a panel interview evaluation report.
+Write a concise 3-5 sentence paragraph summarising the panel's overall effectiveness in this interview.
+Cover: the overall efficiency rating, the strongest and weakest dimensions, and a closing recommendation.
+Use professional, neutral tone. No bullet points. No headings. Plain paragraph only.`;
+
 const L2_VALIDATION_SYSTEM_PROMPT = `You are an L2 validation expert reviewing rejection reasons.
 Classify the probing depth and validate evidence from transcripts.
 Return ONLY valid JSON. No additional text.`;
@@ -64,6 +109,12 @@ async function performPanelEvaluation(input) {
     // Parse and validate response
     const evaluation = _parseAndValidatePanelScore(groqResponse, job_id);
 
+    // Generate refined JD and panel summary (run in parallel to save time)
+    const [refinedJd, panelSummary] = await Promise.all([
+      _generateRefinedJD(jd),
+      _generatePanelSummary(evaluation, jd),
+    ]);
+
     // Store evaluation in MongoDB
     await _storeEvaluationInDB({
       job_id,
@@ -75,12 +126,16 @@ async function performPanelEvaluation(input) {
       evidence: evaluation.evidence,
       l2_validation: evaluation.l2_validation,
       l2_rejection_reasons,
-      l1_transcript: l1_transcripts.join('\n\n')
+      l1_transcript: l1_transcripts.join('\n\n'),
+      refined_jd: refinedJd,
+      panel_summary: panelSummary,
     });
 
     return {
       success: true,
       evaluation: evaluation,
+      refined_jd: refinedJd,
+      panel_summary: panelSummary,
       timestamp: new Date().toISOString()
     };
   } catch (error) {
@@ -448,6 +503,64 @@ function _validatePanelStructure(obj) {
 }
 
 /**
+ * Generate a refined JD skill classification using the ICEO prompt
+ * @private
+ */
+async function _generateRefinedJD(jd) {
+  try {
+    const userPrompt = `Please analyse the following Job Description and classify the required skills into Key Skills, Mandatory Skills, and Good To Have Skills:\n\nJob Description:\n${jd}`;
+    const raw = await _callGroqWithRetry(userPrompt, JD_REFINE_SYSTEM_PROMPT);
+    // Parse sections
+    const parsed = { key_skills: [], mandatory_skills: [], good_to_have_skills: [], raw };
+    const keyMatch     = raw.match(/Key Skills[:\s]*([\s\S]*?)(?=Mandatory Skills|Good To Have Skills|$)/i);
+    const mandatoryMatch = raw.match(/Mandatory Skills[:\s]*([\s\S]*?)(?=Key Skills|Good To Have Skills|$)/i);
+    const goodMatch    = raw.match(/Good To Have Skills[:\s]*([\s\S]*?)(?=Key Skills|Mandatory Skills|$)/i);
+
+    function extractLines(block) {
+      if (!block) return [];
+      return block.trim().split('\n')
+        .map(l => l.replace(/^\d+\.\s*/, '').trim())
+        .filter(l => l.length > 2);
+    }
+
+    parsed.key_skills          = extractLines(keyMatch?.[1]);
+    parsed.mandatory_skills    = extractLines(mandatoryMatch?.[1]);
+    parsed.good_to_have_skills = extractLines(goodMatch?.[1]);
+    return parsed;
+  } catch (err) {
+    console.error('_generateRefinedJD error:', err.message);
+    return null;
+  }
+}
+
+/**
+ * Generate a natural-language panel summary paragraph
+ * @private
+ */
+async function _generatePanelSummary(evaluation, jd) {
+  try {
+    const catLines = Object.entries(evaluation.categories || {})
+      .map(([dim, score]) => `  - ${dim}: ${score}`)
+      .join('\n');
+    const userPrompt = `Panel Evaluation Results:
+- Overall Score: ${evaluation.score} / 11.0
+- Score Category: ${evaluation.score_category || 'N/A'}
+- Dimensions:
+${catLines}
+
+Job Description (brief):
+${String(jd || '').substring(0, 400)}
+
+Write a concise 3-5 sentence professional paragraph summarising this panel's interview effectiveness.`;
+    const summary = await _callGroqWithRetry(userPrompt, PANEL_SUMMARY_SYSTEM_PROMPT);
+    return summary.trim();
+  } catch (err) {
+    console.error('_generatePanelSummary error:', err.message);
+    return null;
+  }
+}
+
+/**
  * Store evaluation result in MongoDB
  * @private
  */
@@ -468,6 +581,8 @@ async function _storeEvaluationInDB(evaluationData) {
       l2_validation: evaluationData.l2_validation,
       l2_rejection_reasons: evaluationData.l2_rejection_reasons || [],
       l1_transcript: evaluationData.l1_transcript || '',
+      refined_jd: evaluationData.refined_jd || null,
+      panel_summary: evaluationData.panel_summary || null,
       evaluated_at: new Date().toISOString(),
       created_at: new Date()
     };

@@ -20,7 +20,7 @@ export function ValidationEvidence({ questions }: Props) {
         {questions.map((question, index) => (
           <li
             key={index}
-            className="text-sm text-text-primary bg-white/[0.04] border-l-2 border-primary/50 pl-3 py-2 rounded"
+            className="text-xs italic text-text-muted bg-white/[0.04] border-l-2 border-primary/50 pl-3 py-1.5 rounded"
           >
             "{question}"
           </li>

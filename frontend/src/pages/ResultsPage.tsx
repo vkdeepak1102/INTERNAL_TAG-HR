@@ -132,6 +132,7 @@ export default function ResultsPage() {
             evaluationId={evaluationId}
             score={displayScore ?? 0}
             categories={displayDimensions as Record<string, number> | null}
+            evaluationData={cachedEvaluation}
           />
 
           {/* Main Panel Efficiency Score */}

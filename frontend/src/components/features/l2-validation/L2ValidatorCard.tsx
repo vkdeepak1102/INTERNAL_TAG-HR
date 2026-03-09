@@ -100,11 +100,22 @@ export function L2ValidatorCard({
 
       {/* Rejection reason display */}
       {cleanedReason && (
-        <div className="bg-white/[0.03] border border-white/[0.07] rounded-lg px-4 py-3">
-          <p className="text-xs font-medium uppercase tracking-widest text-text-muted mb-2">
+        <div className="bg-red-500/10 border border-red-500/25 rounded-lg px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-widest text-red-400/80 mb-2">
             Rejection Reason
           </p>
-          <p className="text-sm text-text-primary leading-relaxed">{cleanedReason}</p>
+          <ul className="space-y-1.5">
+            {cleanedReason
+              .split(',')
+              .map((r) => r.trim())
+              .filter(Boolean)
+              .map((reason, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-red-200 leading-snug">
+                  <span className="mt-1.5 shrink-0 w-1.5 h-1.5 rounded-full bg-red-400/70" />
+                  {reason}
+                </li>
+              ))}
+          </ul>
         </div>
       )}
 
@@ -119,20 +130,12 @@ export function L2ValidatorCard({
       {/* Result */}
       {result && (
         <div className="space-y-4 pt-2 border-t border-white/[0.06]">
-          {/* Probing depth + confidence */}
-          <div className="flex items-center gap-4">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-widest text-text-muted mb-1.5">
-                Probing Depth
-              </p>
-              <ProbingDepthBadge depth={result.probingDepth} />
-            </div>
-            <div className="ml-auto text-right">
-              <p className="text-xs text-text-muted">Validation Confidence</p>
-              <p className="text-lg font-bold text-text-primary">
-                {(result.confidence * 100).toFixed(0)}%
-              </p>
-            </div>
+          {/* Probing depth */}
+          <div>
+            <p className="text-xs font-medium uppercase tracking-widest text-text-muted mb-1.5">
+              Probing Depth
+            </p>
+            <ProbingDepthBadge depth={result.probingDepth} />
           </div>
 
           {/* Matching questions */}

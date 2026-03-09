@@ -27,11 +27,12 @@ export interface Dimension {
   colour: string;
 }
 
+// Weighted scoring: Mandatory (25%) + Technical (25%) = 50%; remaining 6 share 50%
 export const DIMENSIONS: Record<string, Dimension> = {
   mandatorySkillCoverage: {
     id: 'mandatorySkillCoverage',
     name: 'Mandatory Skill Coverage',
-    maxScore: 2.0,
+    maxScore: 2.5,
     actualScore: 0,
     evidence: [],
     colour: 'score-mandatory',
@@ -39,7 +40,7 @@ export const DIMENSIONS: Record<string, Dimension> = {
   technicalDepth: {
     id: 'technicalDepth',
     name: 'Technical Depth',
-    maxScore: 1.5,
+    maxScore: 2.5,
     actualScore: 0,
     evidence: [],
     colour: 'score-technical',
@@ -71,7 +72,7 @@ export const DIMENSIONS: Record<string, Dimension> = {
   leadershipEvaluation: {
     id: 'leadershipEvaluation',
     name: 'Leadership Evaluation',
-    maxScore: 1.0,
+    maxScore: 0.75,
     actualScore: 0,
     evidence: [],
     colour: 'score-leadership',
@@ -79,7 +80,7 @@ export const DIMENSIONS: Record<string, Dimension> = {
   behavioralAssessment: {
     id: 'behavioralAssessment',
     name: 'Behavioral Assessment',
-    maxScore: 1.0,
+    maxScore: 0.75,
     actualScore: 0,
     evidence: [],
     colour: 'score-behavioral',
@@ -87,7 +88,7 @@ export const DIMENSIONS: Record<string, Dimension> = {
   interviewStructure: {
     id: 'interviewStructure',
     name: 'Interview Structure',
-    maxScore: 1.5,
+    maxScore: 0.5,
     actualScore: 0,
     evidence: [],
     colour: 'score-structure',

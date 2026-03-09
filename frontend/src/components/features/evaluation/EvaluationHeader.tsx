@@ -8,9 +8,10 @@ interface Props {
   evaluationId?: string;
   score?: number;
   categories?: Record<string, number>;
+  evaluationData?: any | null;
 }
 
-export function EvaluationHeader({ jobId, panelName, candidateName, evaluationId, score, categories }: Props) {
+export function EvaluationHeader({ jobId, panelName, candidateName, evaluationId, score, categories, evaluationData }: Props) {
   return (
     <div className="flex items-start justify-between gap-4">
       <div>
@@ -45,6 +46,7 @@ export function EvaluationHeader({ jobId, panelName, candidateName, evaluationId
           candidateName={candidateName}
           score={score}
           categories={categories}
+          evaluationData={evaluationData}
         />
       </div>
     </div>

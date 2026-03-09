@@ -54,8 +54,8 @@ export function ProgressRing({ size = 64, stroke = 8, progress }: Props) {
       </g>
       <defs>
         <linearGradient id={gradId} x1="0%" x2="100%">
-          <stop offset="0%" stopColor="#7C3AED" />
-          <stop offset="100%" stopColor="#06B6D4" />
+          <stop offset="0%" stopColor="#FF6B00" />
+          <stop offset="100%" stopColor="#FF9F1C" />
         </linearGradient>
       </defs>
       <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize={12} fill="#fff">

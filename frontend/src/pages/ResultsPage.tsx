@@ -3,7 +3,6 @@ import { SettingsModal } from '@/components/features/modals/SettingsModal';
 import { EvaluationHeader } from '@/components/features/evaluation/EvaluationHeader';
 import { ScoreCard } from '@/components/features/evaluation/ScoreCard';
 import DimensionGrid from '@/components/features/evaluation/DimensionGrid';
-import { ExportButton } from '@/components/features/evaluation/ExportButton';
 import { L2ValidatorCard } from '@/components/features/l2-validation/L2ValidatorCard';
 import { EmptyState } from '@/components/common/EmptyState';
 import { useEvaluationStore } from '@/lib/stores/evaluation.store';
@@ -124,15 +123,23 @@ export default function ResultsPage() {
       <div className="flex-1 overflow-y-auto bg-bg-base p-8">
         <div className="max-w-6xl mx-auto space-y-8">
           <div aria-live="polite" aria-atomic="true" className="sr-only" ref={liveRef} />
-          <EvaluationHeader jobId={displayJobId} date={displayTimestamp} />
+          <EvaluationHeader
+            jobId={displayJobId}
+            panelName={cachedEvaluation?.panelName}
+            candidateName={cachedEvaluation?.candidateName}
+            evaluationId={evaluationId}
+            score={displayScore ?? 0}
+            categories={displayDimensions as Record<string, number> | null}
+          />
 
           {/* Main Panel Efficiency Score */}
           <section className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="lg:col-span-1">
-              <ScoreCard score={displayScore ?? 0} category={displayScoreCategory} subtitle="Overall panel efficiency" />
-              <div className="mt-4">
-                <ExportButton jobId={displayJobId} evaluationId={evaluationId || ''} />
-              </div>
+              <ScoreCard
+                score={displayScore ?? 0}
+                category={displayScoreCategory}
+                panelName={cachedEvaluation?.panelName}
+              />
             </div>
 
             {/* Dimension Grid */}

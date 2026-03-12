@@ -97,7 +97,7 @@ Return ONLY valid JSON. No additional text.`;
  */
 async function performPanelEvaluation(input) {
   try {
-    const { job_id, panel_name = '', candidate_name = '', jd, l1_transcripts, l2_rejection_reasons = [] } = input;
+    const { job_id, panel_name = '', candidate_name = '', jd, l1_transcripts, l2_rejection_reasons = [], panel_member_id = '', panel_member_email = '' } = input;
 
     // Validate inputs
     if (!job_id || !jd || !l1_transcripts || l1_transcripts.length === 0) {
@@ -137,6 +137,8 @@ async function performPanelEvaluation(input) {
       l1_transcript: l1_transcripts.join('\n\n'),
       refined_jd: refinedJd,
       panel_summary: panelSummary,
+      panel_member_id,
+      panel_member_email
     });
 
     return {
@@ -603,6 +605,8 @@ async function _storeEvaluationInDB(evaluationData) {
       l1_transcript: evaluationData.l1_transcript || '',
       refined_jd: evaluationData.refined_jd || null,
       panel_summary: evaluationData.panel_summary || null,
+      panel_member_id: evaluationData.panel_member_id || '',
+      panel_member_email: evaluationData.panel_member_email || '',
       evaluated_at: new Date().toISOString(),
       created_at: new Date()
     };

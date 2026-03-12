@@ -161,20 +161,24 @@ function CsvFormatInfo() {
               ],
             },
             {
-              label: '🎙 L1 Transcript File (4 columns)',
+              label: '🎙 L1 Transcript File (6 columns)',
               accent: 'text-orange-400',
               cols: [
                 { name: 'Job Interview ID', note: 'Must match JD file' },
                 { name: 'Panel Name', note: 'Interviewer / panel' },
+                { name: 'panel_member_id', note: 'Unique panel member ID' },
+                { name: 'panel_member_email', note: 'Panel member email' },
                 { name: 'Candidate Name', note: 'Interviewee name' },
                 { name: 'L1 Transcript', note: 'Full interview transcript' },
               ],
             },
             {
-              label: '🚫 L2 Rejection File (2 columns)',
+              label: '🚫 L2 Rejection File (4 columns)',
               accent: 'text-emerald-400',
               cols: [
                 { name: 'Job Interview ID', note: 'Must match JD file' },
+                { name: 'panel_member_id', note: 'Unique panel member ID' },
+                { name: 'panel_member_email', note: 'Panel member email' },
                 { name: 'L2 Rejected Reason', note: 'Why the candidate was rejected' },
               ],
             },

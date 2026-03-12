@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, Upload, MessageSquare, Check } from 'lucide-react';
+import { BarChart3, Upload, MessageSquare, Check, Users } from 'lucide-react';
 
 interface NavItem {
   id: string;
@@ -30,6 +30,13 @@ const navItems: NavItem[] = [
     label: 'Chat',
     path: '/chat',
     description: 'Ask the AI',
+  },
+  {
+    id: 'panels',
+    icon: <Users className="w-5 h-5" />,
+    label: 'Panel Insights',
+    path: '/panels',
+    description: 'Interviewer directory',
   },
 ];
 

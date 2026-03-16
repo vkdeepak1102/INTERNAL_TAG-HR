@@ -10,14 +10,14 @@ const axios = require('axios');
 // Panel scoring configuration — max scores per dimension; final score = SUM of all
 // Weighted: Mandatory (25%) + Technical Depth (25%) = 50%; remaining 6 dims share 50%
 const PANEL_DIMENSIONS = {
-  'Mandatory Skill Coverage':       { max: 2.0 },
-  'Technical Depth':                { max: 2.0 },
+  'Mandatory Skill Coverage': { max: 2.0 },
+  'Technical Depth': { max: 2.0 },
   'Rejection Validation Alignment': { max: 2.0 }, // Added based on user feedback
-  'Scenario / Risk Evaluation':     { max: 1.0 },
-  'Framework Knowledge':            { max: 1.0 },
-  'Hands-on Validation':            { max: 1.0 },
-  'Leadership Evaluation':          { max: 0.5 },
-  'Behavioral Assessment':          { max: 0.5 }
+  'Scenario / Risk Evaluation': { max: 1.0 },
+  'Framework Knowledge': { max: 1.0 },
+  'Hands-on Validation': { max: 1.0 },
+  'Leadership Evaluation': { max: 0.5 },
+  'Behavioral Assessment': { max: 0.5 }
 };
 // Maximum possible panel score (sum of all dimension maxes) = 10.0
 const MAX_PANEL_SCORE = Object.values(PANEL_DIMENSIONS).reduce((s, d) => s + d.max, 0);
@@ -136,7 +136,7 @@ async function performPanelEvaluation(input) {
 
     // 5 & 6. Generate Gap Analysis first (as it's used in the main summary)
     const gapAnalysis = await _generateGapAnalysis(evaluation, jd, l2_rejection_reasons);
-    
+
     // Generate refined JD and detailed panel summary in parallel
     const [refinedJd, panelSummary] = await Promise.all([
       _generateRefinedJD(jd),
@@ -235,7 +235,7 @@ async function validateL2Rejection(input) {
  */
 function _buildPanelScoringPrompt(job_id, jd, l1_transcripts, l2_rejection_reasons) {
   const transcriptText = l1_transcripts.map((t, i) => `Transcript ${i + 1}:\n${t}`).join('\n\n');
-  const reasonsText = l2_rejection_reasons.length > 0 
+  const reasonsText = l2_rejection_reasons.length > 0
     ? `\n\nL2 Rejection Reasons:\n${l2_rejection_reasons.map((r, i) => `${i + 1}. ${r}`).join('\n')}`
     : '';
 
@@ -553,9 +553,9 @@ async function _generateRefinedJD(jd) {
     const raw = await _callGroqWithRetry(userPrompt, JD_REFINE_SYSTEM_PROMPT);
     // Parse sections
     const parsed = { key_skills: [], mandatory_skills: [], good_to_have_skills: [], raw };
-    const keyMatch     = raw.match(/Key Skills[:\s]*([\s\S]*?)(?=Mandatory Skills|Good To Have Skills|$)/i);
+    const keyMatch = raw.match(/Key Skills[:\s]*([\s\S]*?)(?=Mandatory Skills|Good To Have Skills|$)/i);
     const mandatoryMatch = raw.match(/Mandatory Skills[:\s]*([\s\S]*?)(?=Key Skills|Good To Have Skills|$)/i);
-    const goodMatch    = raw.match(/Good To Have Skills[:\s]*([\s\S]*?)(?=Key Skills|Mandatory Skills|$)/i);
+    const goodMatch = raw.match(/Good To Have Skills[:\s]*([\s\S]*?)(?=Key Skills|Mandatory Skills|$)/i);
 
     function extractLines(block) {
       if (!block) return [];
@@ -564,8 +564,8 @@ async function _generateRefinedJD(jd) {
         .filter(l => l.length > 2);
     }
 
-    parsed.key_skills          = extractLines(keyMatch?.[1]);
-    parsed.mandatory_skills    = extractLines(mandatoryMatch?.[1]);
+    parsed.key_skills = extractLines(keyMatch?.[1]);
+    parsed.mandatory_skills = extractLines(mandatoryMatch?.[1]);
     parsed.good_to_have_skills = extractLines(goodMatch?.[1]);
     return parsed;
   } catch (err) {

@@ -163,7 +163,7 @@ export const dashboardApi = {
         'Hands-on Validation':         'handsOnValidation',
         'Leadership Evaluation':       'leadershipEvaluation',
         'Behavioral Assessment':       'behavioralAssessment',
-        'Interview Structure':         'interviewStructure',
+        'Rejection Validation Alignment': 'rejectionValidationAlignment',
       };
 
       const rawCategories = body.categories ?? {};

@@ -10,14 +10,14 @@ const axios = require('axios');
 // Panel scoring configuration — max scores per dimension; final score = SUM of all
 // Weighted: Mandatory (25%) + Technical Depth (25%) = 50%; remaining 6 dims share 50%
 const PANEL_DIMENSIONS = {
-  'Mandatory Skill Coverage':   { max: 2.5  }, // 25% of 10
-  'Technical Depth':            { max: 2.5  }, // 25% of 10
-  'Scenario / Risk Evaluation': { max: 1.0  }, // \
-  'Framework Knowledge':        { max: 1.0  }, //  \
-  'Hands-on Validation':        { max: 1.0  }, //   > remaining 5.0 / 10 (50%)
-  'Leadership Evaluation':      { max: 0.75 }, //  /
-  'Behavioral Assessment':      { max: 0.75 }, // /
-  'Interview Structure':        { max: 0.5  }  // /
+  'Mandatory Skill Coverage':       { max: 2.0 },
+  'Technical Depth':                { max: 2.0 },
+  'Rejection Validation Alignment': { max: 2.0 }, // Added based on user feedback
+  'Scenario / Risk Evaluation':     { max: 1.0 },
+  'Framework Knowledge':            { max: 1.0 },
+  'Hands-on Validation':            { max: 1.0 },
+  'Leadership Evaluation':          { max: 0.5 },
+  'Behavioral Assessment':          { max: 0.5 }
 };
 // Maximum possible panel score (sum of all dimension maxes) = 10.0
 const MAX_PANEL_SCORE = Object.values(PANEL_DIMENSIONS).reduce((s, d) => s + d.max, 0);
@@ -250,6 +250,7 @@ ${jd}
 ${transcriptText}${reasonsText}
 
 Score each dimension based on how thoroughly the PANEL covered it through their questions.
+For "Rejection Validation Alignment", score high (2.0) ONLY if the panelist deeply probed the exact areas marked in the L2 Rejection Reasons. Score low (0.0) if they missed or glossed over those weaknesses.
 Each dimension has its own maximum score — score within that range ONLY.
 
 Return ONLY a valid JSON object (no extra text):
@@ -258,24 +259,24 @@ Return ONLY a valid JSON object (no extra text):
   "score": <sum of all category scores>,
   "confidence": <0-1>,
   "categories": {
-    "Mandatory Skill Coverage": <0 to 2.5>,
-    "Technical Depth": <0 to 2.5>,
+    "Mandatory Skill Coverage": <0 to 2.0>,
+    "Technical Depth": <0 to 2.0>,
+    "Rejection Validation Alignment": <0 to 2.0>,
     "Scenario / Risk Evaluation": <0 to 1.0>,
     "Framework Knowledge": <0 to 1.0>,
     "Hands-on Validation": <0 to 1.0>,
-    "Leadership Evaluation": <0 to 0.75>,
-    "Behavioral Assessment": <0 to 0.75>,
-    "Interview Structure": <0 to 0.5>
+    "Leadership Evaluation": <0 to 0.5>,
+    "Behavioral Assessment": <0 to 0.5>
   },
   "evidence": {
     "Mandatory Skill Coverage": ["Interviewer question or probing statement that covered this dimension"],
     "Technical Depth": ["Interviewer question or probing statement"],
+    "Rejection Validation Alignment": ["Interviewer question or probing statement targeting the specific rejection reasons"],
     "Scenario / Risk Evaluation": ["Interviewer question or probing statement"],
     "Framework Knowledge": ["Interviewer question or probing statement"],
     "Hands-on Validation": ["Interviewer question or probing statement"],
     "Leadership Evaluation": ["Interviewer question or probing statement"],
-    "Behavioral Assessment": ["Interviewer question or probing statement"],
-    "Interview Structure": ["Interviewer question or probing statement"]
+    "Behavioral Assessment": ["Interviewer question or probing statement"]
   },
   "probing_verdict": "NO_PROBING|SURFACE_PROBING|DEEP_PROBING",
   "l2_validation": {

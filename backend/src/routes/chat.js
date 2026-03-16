@@ -30,14 +30,14 @@ RESPONSE GUIDELINES:
 - Use Evidence points to support specific claims about what was or wasn't covered.
 
 PANEL SCORING DIMENSIONS (max scores):
-- Mandatory Skill Coverage: 2.5  (highest weight — covers essential technical skills)
-- Technical Depth: 2.5           (probing depth on core domain knowledge)
-- Scenario/Risk Evaluation: 1.0  (situational and risk-based questions)
-- Framework Knowledge: 1.0       (tools, frameworks, methodologies)
-- Hands-on Validation: 1.0       (practical coding/design exercises)
-- Leadership Evaluation: 0.75    (leadership and ownership signals)
-- Behavioral Assessment: 0.75    (STAR-based behavioural questions)
-- Interview Structure: 0.5       (flow, pacing, closure)
+- Mandatory Skill Coverage: 2.0
+- Technical Depth: 2.0
+- Rejection Validation Alignment: 2.0
+- Scenario/Risk Evaluation: 1.0
+- Framework Knowledge: 1.0
+- Hands-on Validation: 1.0
+- Leadership Evaluation: 0.5
+- Behavioral Assessment: 0.5
 Total max score: 10.0
 
 Score interpretation: 0–4.9 = Poor, 5.0–7.9 = Moderate, 8.0–10.0 = Good

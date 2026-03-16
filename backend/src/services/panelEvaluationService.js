@@ -125,8 +125,22 @@ async function performPanelEvaluation(input) {
       throw new Error('l1_transcripts must be an array of strings');
     }
 
-    // Build the evaluation prompt
-    const userPrompt = _buildPanelScoringPrompt(job_id, jd, l1_transcripts, l2_rejection_reasons);
+    let forcedL2Verdict = '';
+    
+    // Enforce Probing Depth Locking: Run L2 Validation first to determine the exact verdict
+    if (l2_rejection_reasons && l2_rejection_reasons.length > 0 && l2_rejection_reasons[0]) {
+      try {
+        const l2Res = await _validateL2Rejection(job_id, l2_rejection_reasons[0], l1_transcripts);
+        if (l2Res && l2Res.success && l2Res.validation && l2Res.validation.probing_verdict) {
+          forcedL2Verdict = l2Res.validation.probing_verdict;
+        }
+      } catch (err) {
+        console.warn('Could not pre-calculate L2 validation for scoring alignment:', err.message);
+      }
+    }
+
+    // Build the evaluation prompt, injecting the strict verdict
+    const userPrompt = _buildPanelScoringPrompt(job_id, jd, l1_transcripts, l2_rejection_reasons, forcedL2Verdict);
 
     // Call GROQ LLM
     const groqResponse = await _callGroqWithRetry(userPrompt, PANEL_SCORING_SYSTEM_PROMPT);
@@ -233,11 +247,15 @@ async function validateL2Rejection(input) {
  * 
  * @private
  */
-function _buildPanelScoringPrompt(job_id, jd, l1_transcripts, l2_rejection_reasons) {
+function _buildPanelScoringPrompt(job_id, jd, l1_transcripts, l2_rejection_reasons, forcedL2Verdict = '') {
   const transcriptText = l1_transcripts.map((t, i) => `Transcript ${i + 1}:\n${t}`).join('\n\n');
   const reasonsText = l2_rejection_reasons.length > 0
     ? `\n\nL2 Rejection Reasons:\n${l2_rejection_reasons.map((r, i) => `${i + 1}. ${r}`).join('\n')}`
     : '';
+
+  const alignmentRuleIntro = forcedL2Verdict 
+    ? `CRITICAL SCORING RULE:\nAn independent AI analysis has concretely established the Probing Depth verdict for this interview is: **${forcedL2Verdict}**.\nYou MUST assign the "Rejection Validation Alignment" score in exact accordance with this pre-determined verdict:`
+    : `For "Rejection Validation Alignment", assign a precise decimal score based on the Probing Depth verdict:`;
 
   return `You are evaluating PANEL EFFICIENCY — how well the INTERVIEWER/PANEL probed the candidate.
 Focus on the INTERVIEWER's questions and probing depth, NOT the candidate's answers.
@@ -250,7 +268,7 @@ ${jd}
 ${transcriptText}${reasonsText}
 
 Score each dimension based on how thoroughly the PANEL covered it through their questions.
-For "Rejection Validation Alignment", assign a precise decimal score based on the Probing Depth verdict:
+${alignmentRuleIntro}
 - If DEEP_PROBING: Score between 1.5 and 2.0 (e.g., 2.0 for exhaustive probing, 1.7 for strong but slightly incomplete probing).
 - If SURFACE_PROBING: Score between 0.5 and 1.4 (e.g., 1.0 for basic probing, 1.4 for decent but not deep).
 - If NO_PROBING: Score between 0.0 and 0.4 (e.g., 0.0 for missing it entirely, 0.2 for a very faint, incidental mention).

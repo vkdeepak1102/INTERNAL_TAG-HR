@@ -207,15 +207,15 @@ export default function PanelProfilePage() {
               </div>
             </div>
             
-            <div className="flex gap-6 text-right">
+            <div className="flex gap-6 text-center items-center">
               <div>
                 <p className="text-xs text-text-muted uppercase tracking-wider font-semibold mb-1">Total Interviews</p>
                 <p className="text-2xl font-bold text-text-primary">{data.totalEvaluations}</p>
               </div>
-              <div className="w-px bg-white/[0.06]"></div>
+              <div className="w-px h-10 bg-white/[0.06]"></div>
               <div>
                 <p className="text-xs text-text-muted uppercase tracking-wider font-semibold mb-1">Avg Score</p>
-                <div className="flex items-baseline gap-1 justify-end">
+                <div className="flex items-baseline gap-1 justify-center">
                   <span className={`text-2xl font-bold ${scoreCategory}`}>{data.averageScore.toFixed(1)}</span>
                   <span className="text-sm text-text-muted">/ 10</span>
                 </div>

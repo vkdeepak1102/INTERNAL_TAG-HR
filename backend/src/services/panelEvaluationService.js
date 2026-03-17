@@ -78,7 +78,8 @@ STRICT RULES — follow exactly:
    - Rejection Reason Validation: How well the panel probed the candidate's weaknesses mentioned in the rejection reasons.
    - Identification Gap: Conclude with exactly ONE significant probing deficiency or gap identified during the evaluation.
 3. Mention positive highlights ONLY if the Score Category is "Good". For "Moderate" or "Poor", focus on critical gaps and missed opportunities.
-4. Format as a markdown bulleted list (using '-'). No intro or outro text. Keep it professional and high-level.`;
+4. Format as a markdown bulleted list (using '-'). No intro or outro text. Keep it professional and high-level.
+5. Use highly formal, definitive business English. Avoid vague or conversational filler words like "somewhat", "kind of", or "appeared to be". State facts directly (e.g., "The panel members lacked thorough preparation" instead of "The panel members appeared somewhat professional but lacked thorough preparation").`;
 
 const GAP_ANALYSIS_SYSTEM_PROMPT = `You are a Quality Assurance Specialist for interview panels. 
 Your task is to write a short "Gap Analysis" summary based on the L2 Rejection Reasons and the panel's scoring gaps.

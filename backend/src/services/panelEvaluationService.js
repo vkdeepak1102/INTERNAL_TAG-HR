@@ -75,8 +75,8 @@ STRICT RULES — follow exactly:
 2. Structure your summary to include points on:
    - Panel Member Behavior: How professional and prepared the interviewer appeared.
    - Interview Process: The quality of the structure, flow, and time management.
-   - Rejection Reason Validation: How well the panel probed the candidate's weaknesses mentioned in the rejection reasons.
-   - Identification Gap: Conclude with exactly ONE significant probing deficiency or gap identified during the evaluation.
+   - Rejection Reason Validation: State if the panel validated the provided L2 rejection reason.
+   - Identified Gaps: Conclude with exactly ONE significant probing deficiency or gap identified during the evaluation.
 3. Mention positive highlights ONLY if the Score Category is "Good". For "Moderate" or "Poor", focus on critical gaps and missed opportunities.
 4. Format as a markdown bulleted list (using '-'). No intro or outro text. Keep it professional and high-level.
 5. Use highly formal, definitive business English. Avoid vague or conversational filler words like "somewhat", "kind of", or "appeared to be". State facts directly (e.g., "The panel members lacked thorough preparation" instead of "The panel members appeared somewhat professional but lacked thorough preparation").`;
@@ -618,7 +618,7 @@ async function _generatePanelSummary(evaluation, jd, l2_rejection_reasons = [], 
       : '';
 
     const gapContext = gapAnalysis
-      ? `\nTop Identification Gap Point:\n${gapAnalysis.split('\n')[0]}`
+      ? `\nTop Identified Gaps Point:\n${gapAnalysis.split('\n')[0]}`
       : '';
 
     const userPrompt = `Panel Evaluation Results:

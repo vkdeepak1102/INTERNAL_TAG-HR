@@ -113,7 +113,8 @@ export function ExportButton({
         'Panel Member Behavior:',
         'Interview Process:',
         'Rejection Reason Validation:',
-        'Identification Gap:',
+        'Identified Gaps:',
+        'Identification Gaps:',
         'Overall Effectiveness:'
       ];
 
@@ -147,7 +148,7 @@ export function ExportButton({
 
     const gapHtml = evaluationData?.gap_analysis || evaluationData?.gapAnalysis || store.gapAnalysis
       ? `<div class="section-block" style="margin-top:18px;padding:12px 14px;background:#fff1f2;border-left:3px solid #ef4444;border-radius:4px">
-           <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#b91c1c;margin:0 0 6px">Identification Gaps</p>
+           <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#b91c1c;margin:0 0 6px">Identified Gaps</p>
            <ul style="margin:0;padding-left:14px">
              ${(evaluationData?.gap_analysis || evaluationData?.gapAnalysis || store.gapAnalysis || '')
                .split('\n')

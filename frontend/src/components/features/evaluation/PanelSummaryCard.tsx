@@ -36,7 +36,9 @@ export function PanelSummaryCard({ summary, gapAnalysis, scoreCategory }: Props)
             'Interview Process:',
             'Rejection Reason Validation:',
             'Identification Gap:',
-            'Overall Effectiveness:'
+            'Overall Effectiveness:',
+            'Identified Gaps:',
+            'Identification Gaps:',
           ].some(h => cleanLine.startsWith(h));
 
           if (isHeader) {
@@ -45,7 +47,9 @@ export function PanelSummaryCard({ summary, gapAnalysis, scoreCategory }: Props)
               'Interview Process:',
               'Rejection Reason Validation:',
               'Identification Gap:',
-              'Overall Effectiveness:'
+              'Overall Effectiveness:',
+              'Identified Gaps:',
+              'Identification Gaps:',
             ].find(h => cleanLine.startsWith(h)) || '';
             
             const contentText = cleanLine.substring(headerText.length).trim();
@@ -69,8 +73,8 @@ export function PanelSummaryCard({ summary, gapAnalysis, scoreCategory }: Props)
 
       {gapAnalysis && (
         <div className="pt-4 border-t border-white/5 space-y-3">
-          <div className="flex items-center gap-2">
-            <h4 className="text-xs font-bold text-orange-400 uppercase tracking-widest">Identification Gaps</h4>
+          <div className="flex gap-3">
+            <h4 className="text-xs font-bold text-orange-400 uppercase tracking-widest">Identified Gaps</h4>
             <span className="w-1.5 h-1.5 rounded-full bg-red-500/50 animate-pulse" />
           </div>
           <div className="border-l-4 border-l-red-500/50 pl-4">

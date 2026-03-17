@@ -97,8 +97,11 @@ const COL_PANEL_EMAIL = ['panel_member_email', 'panel email', 'panel_email', 'pa
 export function useBulkUpload() {
   const [tasks, setTasks] = useState<EvaluationTask[]>([]);
   const [isRunning, setIsRunning] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
   const abortRef = useRef(false);
+
+  const isComplete = tasks.length > 0 && tasks.every(
+    (t) => t.status === 'done' || t.status === 'skipped' || t.status === 'error'
+  );
 
   // ── Parse ──────────────────────────────────────────────────────────────────
 
@@ -235,7 +238,6 @@ export function useBulkUpload() {
       }
 
       setTasks(parsed);
-      setIsComplete(false);
       return issues;
     },
     []
@@ -251,7 +253,6 @@ export function useBulkUpload() {
     async (tasksToRun: EvaluationTask[]) => {
       if (tasksToRun.length === 0) return;
       setIsRunning(true);
-      setIsComplete(false);
       abortRef.current = false;
 
       let doneCount = 0;
@@ -317,7 +318,6 @@ export function useBulkUpload() {
       }
 
       setIsRunning(false);
-      setIsComplete(true);
 
       if (doneCount > 0)
         toast.success(`Bulk complete: ${doneCount} of ${tasksToRun.length} evaluated ✓`);
@@ -335,11 +335,17 @@ export function useBulkUpload() {
     runBatch(tasks);
   }, [runBatch, tasks]);
 
+  const startSingle = useCallback((taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      runBatch([task]);
+    }
+  }, [runBatch, tasks]);
+
   const reset = useCallback(() => {
     abortRef.current = true;
     setTasks([]);
     setIsRunning(false);
-    setIsComplete(false);
   }, []);
 
   const summary: BulkUploadSummary = {
@@ -364,6 +370,7 @@ export function useBulkUpload() {
     progress,
     parseFiles,
     startBatch,
+    startSingle,
     reset,
   };
 }

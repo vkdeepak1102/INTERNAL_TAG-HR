@@ -108,8 +108,8 @@ pm2 save
 DEPLOY_SUDOERS="/etc/sudoers.d/panel-pulse-deploy"
 printf '%s\n' \
     "indium ALL=(root) NOPASSWD: /usr/bin/rm -rf /opt/panel-pulse/frontend/dist" \
+    "indium ALL=(root) NOPASSWD: /usr/bin/tee /etc/nginx/sites-available/panel-pulse" \
     "indium ALL=(root) NOPASSWD: /usr/bin/systemctl reload nginx" \
-    "indium ALL=(root) NOPASSWD: /usr/bin/cp /opt/panel-pulse/deployment/nginx.conf /etc/nginx/sites-available/panel-pulse" \
     "indium ALL=(root) NOPASSWD: /usr/sbin/nginx -t" \
     > "$DEPLOY_SUDOERS"
 chmod 440 "$DEPLOY_SUDOERS"

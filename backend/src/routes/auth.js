@@ -110,8 +110,8 @@ router.post('/verify-otp', async (req, res) => {
 
   res.cookie('pp_token', token, {
     httpOnly: true,
-    secure: IS_PROD,   // true in prod (requires HTTPS), false on HTTP dev/VM
-    sameSite: 'lax',
+    secure: IS_PROD,   // true in prod (required for sameSite: 'none')
+    sameSite: IS_PROD ? 'none' : 'lax', // 'none' for cross-domain prod, 'lax' for local dev
     maxAge: COOKIE_MAX_AGE_MS,
     path: '/',
   });

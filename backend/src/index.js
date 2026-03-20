@@ -35,8 +35,11 @@ app.use((req, res, next) => {
 
   // Allow matching origins, *.vercel.app previews, or no-origin requests (curl etc.)
   const isVercelPreview = origin && origin.endsWith('.vercel.app');
-  if (!origin || allowedOrigins.includes(origin) || isVercelPreview) {
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  if (origin && (allowedOrigins.includes(origin) || isVercelPreview)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else if (!origin) {
+    // For tools like curl that don't send an Origin header
+    res.setHeader('Access-Control-Allow-Origin', '*'); 
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   const requestedHeaders = req.header('access-control-request-headers');

@@ -165,10 +165,7 @@ export default function LoginPage() {
             <CheckCircle className="w-7 h-7 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-text-primary">Panel Pulse AI</h1>
-          <p className="text-sm text-text-muted mt-1">Internal tool for Indium Software</p>
-          <p className="text-[10px] text-accent-primary font-mono mt-2 opacity-70">
-            API: {API_BASE_URL}
-          </p>
+          {/* Diagnostic info removed for final push */}
         </div>
 
         {/* Card */}
@@ -242,14 +239,19 @@ export default function LoginPage() {
                 </p>
               </div>
               
-              {/* Test OTP (Always show during this test phase) */}
-              {testOtp && (
-                <div className="bg-accent-primary border border-accent-primary/20 rounded-xl p-4 text-center shadow-lg">
-                  <p className="text-[10px] text-white uppercase tracking-[0.2em] font-bold mb-2">
-                    Enter this Verification Code
+              {/* Test OTP (Development only) */}
+              {import.meta.env.DEV && testOtp && (
+                <div className="mb-6 p-4 rounded-xl border border-accent-primary/30 bg-accent-primary/5 backdrop-blur-sm shadow-xl animate-in fade-in slide-in-from-top-4 duration-500">
+                  <p className="text-[10px] text-text-muted uppercase tracking-[0.3em] font-bold mb-3 text-center">
+                    Testing Verification Code
                   </p>
-                  <div className="text-3xl font-mono font-bold text-accent-primary tracking-[0.3em] bg-white py-2 rounded-lg border border-border-primary/50">
-                    {testOtp}
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-accent-primary/10 blur-xl rounded-full" />
+                    <div className="relative bg-bg-surface border border-accent-primary/20 py-4 rounded-xl text-center shadow-inner">
+                      <span className="text-4xl font-mono font-black text-accent-primary tracking-[0.4em] drop-shadow-[0_0_10px_rgba(255,107,0,0.3)]">
+                        {testOtp}
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}

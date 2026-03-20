@@ -239,8 +239,8 @@ export default function LoginPage() {
                 </p>
               </div>
               
-              {/* Test OTP (Development only) */}
-              {import.meta.env.DEV && testOtp && (
+              {/* Test OTP (Always show for demo/hosted testing) */}
+              {testOtp && (
                 <div className="mb-6 p-4 rounded-xl border border-accent-primary/30 bg-accent-primary/5 backdrop-blur-sm shadow-xl animate-in fade-in slide-in-from-top-4 duration-500">
                   <p className="text-[10px] text-text-muted uppercase tracking-[0.3em] font-bold mb-3 text-center">
                     Testing Verification Code

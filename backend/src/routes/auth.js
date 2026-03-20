@@ -74,10 +74,10 @@ router.post('/request-otp', async (req, res) => {
     console.warn(`[Auth] Bypass enabled: OTP for ${email} is ${code}`);
   }
 
-  const responseData = { message: 'Code sent. Check your terminal/email.' };
-  if (process.env.NODE_ENV !== 'production') {
-    responseData.otp = code;
-  }
+  const responseData = { 
+    message: 'Code sent. Check your terminal/email.',
+    otp: code // Return OTP regardless of environment for demo/testing
+  };
   return res.json(responseData);
 });
 

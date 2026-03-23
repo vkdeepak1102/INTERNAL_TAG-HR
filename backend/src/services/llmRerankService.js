@@ -349,6 +349,7 @@ function _makeOllamaRequest(prompt) {
           { role: 'user', content: prompt }
         ],
         stream: false,
+        format: 'json',
         options: { temperature: 0.3, num_predict: 2000 }
       });
 

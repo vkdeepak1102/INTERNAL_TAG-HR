@@ -147,8 +147,8 @@ async function performPanelEvaluation(input) {
     // Build the evaluation prompt, injecting the strict verdict
     const userPrompt = _buildPanelScoringPrompt(job_id, jd, l1_transcripts, l2_rejection_reasons, forcedL2Verdict);
 
-    // Call GROQ LLM
-    const groqResponse = await _callGroqWithRetry(userPrompt, PANEL_SCORING_SYSTEM_PROMPT);
+    // Call GROQ LLM — forceJson=true enables Ollama grammar-constrained JSON mode
+    const groqResponse = await _callGroqWithRetry(userPrompt, PANEL_SCORING_SYSTEM_PROMPT, true);
 
     // Parse and validate response
     const evaluation = _parseAndValidatePanelScore(groqResponse, job_id);
@@ -224,8 +224,8 @@ async function validateL2Rejection(input) {
     // Build validation prompt
     const userPrompt = _buildL2ValidationPrompt(job_id, l2_reason, l1_transcripts);
 
-    // Call GROQ LLM
-    const groqResponse = await _callGroqWithRetry(userPrompt, L2_VALIDATION_SYSTEM_PROMPT);
+    // Call GROQ LLM — forceJson=true enables Ollama grammar-constrained JSON mode
+    const groqResponse = await _callGroqWithRetry(userPrompt, L2_VALIDATION_SYSTEM_PROMPT, true);
 
     // Parse response
     const validation = _parseL2ValidationResponse(groqResponse);
@@ -364,7 +364,7 @@ Return a JSON object with:
  *
  * @private
  */
-async function _callGroqWithRetry(userPrompt, systemPrompt) {
+async function _callGroqWithRetry(userPrompt, systemPrompt, forceJson = false) {
   const ollamaBase = (process.env.OLLAMA_BASE_URL || '').replace(/\/$/, '');
   const ollamaModel = process.env.OLLAMA_MODEL_NAME || process.env.GROQ_MODEL_NAME || 'llama-3.3-70b-versatile';
   const groqApiKey = process.env.GROQ_API_KEY;
@@ -389,8 +389,12 @@ async function _callGroqWithRetry(userPrompt, systemPrompt) {
   ];
 
   try {
+    // forceJson=true adds Ollama's grammar-constrained JSON mode — prevents the model from
+    // wrapping its output in prose or <think> blocks (critical for deepseek-r1 style models)
+    const ollamaBody = { model, messages, stream: false, options: { temperature: 0.2, num_predict: 2000 } };
+    if (forceJson) ollamaBody.format = 'json';
     const body = ollamaBase
-      ? { model, messages, stream: false, options: { temperature: 0.2, num_predict: 2000 } }
+      ? ollamaBody
       : { model, messages, temperature: 0.2, max_tokens: 2000, top_p: 1, stream: false };
 
     const response = await axios.post(apiUrl, body, { headers, timeout: 60000 });
@@ -428,13 +432,39 @@ async function _callGroqWithRetry(userPrompt, systemPrompt) {
  */
 function _parseAndValidatePanelScore(response, job_id) {
   try {
-    // Extract JSON from response
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
+    // Robust JSON extraction: handle markdown code blocks, then balanced-brace scan
+    const text = String(response || '');
+    let jsonText = null;
+
+    // 1. Try explicit ```json ... ``` block
+    const jsonBlock = text.match(/```json\s*([\s\S]*?)```/i);
+    if (jsonBlock) {
+      jsonText = jsonBlock[1].trim();
+    } else {
+      // 2. Balanced-brace scan for first complete JSON object
+      const firstBrace = text.indexOf('{');
+      if (firstBrace !== -1) {
+        let idx = firstBrace, depth = 0, inString = false, escape = false, endIdx = -1;
+        while (idx < text.length) {
+          const ch = text[idx];
+          if (escape) { escape = false; }
+          else if (ch === '\\') { escape = true; }
+          else if (ch === '"') { inString = !inString; }
+          else if (!inString) {
+            if (ch === '{') depth++;
+            else if (ch === '}') { depth--; if (depth === 0) { endIdx = idx; break; } }
+          }
+          idx++;
+        }
+        if (endIdx !== -1) jsonText = text.slice(firstBrace, endIdx + 1);
+      }
+    }
+
+    if (!jsonText) {
       throw new Error('No JSON found in response');
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    const parsed = JSON.parse(jsonText);
 
     // Ensure job_id matches
     if (!parsed.job_id) {

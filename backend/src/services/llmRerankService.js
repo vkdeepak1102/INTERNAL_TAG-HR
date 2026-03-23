@@ -372,7 +372,10 @@ function _makeOllamaRequest(prompt) {
           try {
             const response = JSON.parse(body);
             // /api/chat returns { message: { content: '...' } }
-            const content = response.message?.content?.trim();
+            // deepseek-r1 style models may put thinking in message.thinking; fall back to it
+            const rawContent = response.message?.content || response.message?.thinking || '';
+            // Strip chain-of-thought <think> blocks before JSON extraction
+            const content = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
             if (!content) return reject(new Error('Empty Ollama response'));
             const jsonStr = _extractJsonFromModelResponse(content);
             const rankedResults = JSON.parse(jsonStr);

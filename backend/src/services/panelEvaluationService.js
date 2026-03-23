@@ -395,9 +395,12 @@ async function _callGroqWithRetry(userPrompt, systemPrompt) {
 
     const response = await axios.post(apiUrl, body, { headers, timeout: 60000 });
 
-    const content = ollamaBase
-      ? response.data?.message?.content
+    const rawContent = ollamaBase
+      ? (response.data?.message?.content || response.data?.message?.thinking || '')
       : response.data?.choices?.[0]?.message?.content;
+
+    // Strip chain-of-thought <think> blocks emitted by deepseek-r1 style models
+    const content = (rawContent || '').replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
     if (!content) throw new Error('Invalid response format from LLM API');
     return content;

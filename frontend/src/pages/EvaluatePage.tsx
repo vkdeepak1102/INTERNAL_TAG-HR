@@ -1,5 +1,4 @@
 import { AppShell } from '@/components/layout/AppShell';
-import { SettingsModal } from '@/components/features/modals/SettingsModal';
 import { BulkUploadForm } from '@/components/features/upload/BulkUploadForm';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -8,7 +7,6 @@ export default function EvaluatePage() {
   const navigate = useNavigate();
   return (
     <AppShell>
-      <SettingsModal />
       <div className="flex-1 overflow-y-auto bg-bg-base p-8">
         <div className="max-w-5xl mx-auto">
           <button

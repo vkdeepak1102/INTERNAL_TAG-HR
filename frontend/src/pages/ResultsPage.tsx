@@ -1,5 +1,4 @@
 import { AppShell } from '@/components/layout/AppShell';
-import { SettingsModal } from '@/components/features/modals/SettingsModal';
 import { EvaluationHeader } from '@/components/features/evaluation/EvaluationHeader';
 import { ScoreCard } from '@/components/features/evaluation/ScoreCard';
 import DimensionGrid from '@/components/features/evaluation/DimensionGrid';
@@ -81,7 +80,6 @@ export default function ResultsPage() {
   if (fetchError) {
     return (
       <AppShell>
-        <SettingsModal />
         <div className="flex-1 p-6">
           <EmptyState
             title="Failed to load evaluation"
@@ -96,7 +94,6 @@ export default function ResultsPage() {
   if (!cachedEvaluation && displayScore === null && !isLoading && !loadingCached) {
     return (
       <AppShell>
-        <SettingsModal />
         <div className="flex-1 p-6">
           <EmptyState
             title="No evaluation found"
@@ -111,7 +108,6 @@ export default function ResultsPage() {
   if (loadingCached) {
     return (
       <AppShell>
-        <SettingsModal />
         <div className="flex-1 p-6 flex items-center justify-center">
           <div className="text-text-secondary">Loading evaluation details...</div>
         </div>
@@ -121,7 +117,6 @@ export default function ResultsPage() {
 
   return (
     <AppShell>
-      <SettingsModal />
       <div className="flex-1 overflow-y-auto bg-bg-base p-8">
         <div className="max-w-6xl mx-auto space-y-8">
           <div aria-live="polite" aria-atomic="true" className="sr-only" ref={liveRef} />

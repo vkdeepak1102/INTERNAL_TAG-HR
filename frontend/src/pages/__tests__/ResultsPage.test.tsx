@@ -5,9 +5,6 @@ vi.mock('@/components/layout/AppShell', () => ({
   AppShell: ({ children }: any) => <div>{children}</div>,
 }));
 
-vi.mock('@/components/features/modals/SettingsModal', () => ({
-  SettingsModal: () => <div />,
-}));
 
 vi.mock('@/components/features/l2-validation/L2ValidatorCard', () => ({
   L2ValidatorCard: ({ l1Transcript }: any) => <div data-testid="l2-validator">L2 Validator: {l1Transcript ? 'Ready' : 'No Transcript'}</div>,

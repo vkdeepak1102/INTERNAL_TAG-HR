@@ -1,10 +1,8 @@
 import { AppShell } from '@/components/layout/AppShell';
-import { SettingsModal } from '@/components/features/modals/SettingsModal';
 
 export default function HistoryPage() {
   return (
     <AppShell>
-      <SettingsModal />
       <div className="flex-1 flex items-center justify-center overflow-y-auto bg-bg-base">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-text-primary mb-2">Evaluation History</h1>

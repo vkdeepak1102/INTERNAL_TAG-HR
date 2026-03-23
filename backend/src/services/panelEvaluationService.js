@@ -403,13 +403,18 @@ async function _callGroqWithRetry(userPrompt, systemPrompt) {
     return content;
   } catch (error) {
     const provider = ollamaBase ? 'Ollama' : 'GROQ';
-    console.error(`[PanelEval] ${provider} request failed:`, error.message);
+    // Log the full response body when available to help diagnose model-not-found 404s
+    const detail = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+    console.error(`[PanelEval] ${provider} request failed:`, detail);
 
     if (error.response && error.response.status === 429) {
       throw new Error(`${provider} rate limit (429) — validation temporarily unavailable. Please try again later.`);
     }
+    if (error.response && error.response.status === 404) {
+      throw new Error(`${provider} 404 — model not found or endpoint unavailable. Check OLLAMA_MODEL_NAME (run GET /api/v1/health/llm to see available models). Detail: ${detail}`);
+    }
 
-    throw new Error(`${provider} request failed: ${error.message}`);
+    throw new Error(`${provider} request failed: ${detail}`);
   }
 }
 

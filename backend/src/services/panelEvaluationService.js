@@ -147,8 +147,8 @@ async function performPanelEvaluation(input) {
     // Build the evaluation prompt, injecting the strict verdict
     const userPrompt = _buildPanelScoringPrompt(job_id, jd, l1_transcripts, l2_rejection_reasons, forcedL2Verdict);
 
-    // Call GROQ LLM — forceJson=true enables Ollama grammar-constrained JSON mode
-    const groqResponse = await _callGroqWithRetry(userPrompt, PANEL_SCORING_SYSTEM_PROMPT, true);
+    // Call LLM
+    const groqResponse = await _callGroqWithRetry(userPrompt, PANEL_SCORING_SYSTEM_PROMPT);
 
     // Parse and validate response
     const evaluation = _parseAndValidatePanelScore(groqResponse, job_id);
@@ -224,8 +224,8 @@ async function validateL2Rejection(input) {
     // Build validation prompt
     const userPrompt = _buildL2ValidationPrompt(job_id, l2_reason, l1_transcripts);
 
-    // Call GROQ LLM — forceJson=true enables Ollama grammar-constrained JSON mode
-    const groqResponse = await _callGroqWithRetry(userPrompt, L2_VALIDATION_SYSTEM_PROMPT, true);
+    // Call LLM
+    const groqResponse = await _callGroqWithRetry(userPrompt, L2_VALIDATION_SYSTEM_PROMPT);
 
     // Parse response
     const validation = _parseL2ValidationResponse(groqResponse);
@@ -364,7 +364,7 @@ Return a JSON object with:
  *
  * @private
  */
-async function _callGroqWithRetry(userPrompt, systemPrompt, forceJson = false) {
+async function _callGroqWithRetry(userPrompt, systemPrompt) {
   const ollamaBase = (process.env.OLLAMA_BASE_URL || '').replace(/\/$/, '');
   const ollamaModel = process.env.OLLAMA_MODEL_NAME || process.env.GROQ_MODEL_NAME || 'llama-3.3-70b-versatile';
   const groqApiKey = process.env.GROQ_API_KEY;
@@ -389,12 +389,8 @@ async function _callGroqWithRetry(userPrompt, systemPrompt, forceJson = false) {
   ];
 
   try {
-    // forceJson=true adds Ollama's grammar-constrained JSON mode — prevents the model from
-    // wrapping its output in prose or <think> blocks (critical for deepseek-r1 style models)
-    const ollamaBody = { model, messages, stream: false, options: { temperature: 0.2, num_predict: 2000 } };
-    if (forceJson) ollamaBody.format = 'json';
     const body = ollamaBase
-      ? ollamaBody
+      ? { model, messages, stream: false, options: { temperature: 0.2, num_predict: 2000 } }
       : { model, messages, temperature: 0.2, max_tokens: 2000, top_p: 1, stream: false };
 
     const response = await axios.post(apiUrl, body, { headers, timeout: 60000 });

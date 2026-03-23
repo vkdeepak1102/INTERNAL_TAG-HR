@@ -1,6 +1,7 @@
 import React from 'react';
 import { ExportButton } from './ExportButton';
-import { EmailButton } from './EmailButton';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface Props {
   jobId: string;
@@ -10,11 +11,25 @@ interface Props {
   score?: number;
   categories?: Record<string, number>;
   evaluationData?: any | null;
+  backUrl?: string;
+  backLabel?: string;
 }
 
-export function EvaluationHeader({ jobId, panelName, candidateName, evaluationId, score, categories, evaluationData }: Props) {
+export function EvaluationHeader({ jobId, panelName, candidateName, evaluationId, score, categories, evaluationData, backUrl, backLabel }: Props) {
+  const navigate = useNavigate();
+
   return (
-    <div className="flex items-start justify-between gap-4">
+    <div className="flex flex-col gap-4">
+      {backUrl && (
+        <button
+          onClick={() => navigate(backUrl)}
+          className="flex items-center gap-2 text-sm text-text-muted hover:text-text-primary transition-colors w-fit"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          {backLabel || 'Back'}
+        </button>
+      )}
+      <div className="flex items-start justify-between gap-4">
       <div>
         <h2 className="text-xl font-semibold text-text-primary mb-3">Evaluation Results</h2>
         <div className="flex flex-wrap gap-2">
@@ -40,15 +55,6 @@ export function EvaluationHeader({ jobId, panelName, candidateName, evaluationId
       </div>
 
       <div className="flex-none flex items-center gap-3">
-        <EmailButton
-          jobId={jobId}
-          evaluationId={evaluationId}
-          panelName={panelName}
-          candidateName={candidateName}
-          score={score}
-          categories={categories}
-          evaluationData={evaluationData}
-        />
         <ExportButton
           jobId={jobId}
           evaluationId={evaluationId}
@@ -58,6 +64,7 @@ export function EvaluationHeader({ jobId, panelName, candidateName, evaluationId
           categories={categories}
           evaluationData={evaluationData}
         />
+      </div>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { panelApi } from '@/lib/api/panel.api';
-import { Users, Search, ChevronRight } from 'lucide-react';
+import { Users, Search, ChevronRight, ArrowLeft } from 'lucide-react';
 
 interface PanelDirectoryRow {
   panelName: string;
@@ -44,6 +44,13 @@ export default function PanelInsightsPage() {
     <AppShell>
       <div className="flex-1 overflow-y-auto bg-bg-base p-8">
         <div className="max-w-6xl mx-auto space-y-6">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2 text-sm text-text-muted hover:text-text-primary transition-colors mb-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </button>
           
           <div className="flex items-center justify-between">
             <div>

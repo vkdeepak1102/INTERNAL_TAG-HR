@@ -198,7 +198,7 @@ export default function DashboardPage() {
                 <div className="h-6 w-px bg-slate-700/50 mx-1" />
 
                 <div className="flex items-center gap-2 bg-slate-900/40 border border-slate-700/50 rounded-lg px-3 py-1.5 shadow-inner">
-                  <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Sort/Filter:</span>
+                  <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Sort:</span>
                   <select
                     value={scoreFilter !== 'all' ? scoreFilter : sortOrder}
                     onChange={(e) => {

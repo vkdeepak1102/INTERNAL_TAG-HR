@@ -133,6 +133,8 @@ export default function ResultsPage() {
             score={displayScore ?? 0}
             categories={(displayDimensions as Record<string, number>) || undefined}
             evaluationData={cachedEvaluation}
+            backUrl="/dashboard"
+            backLabel="Back to Dashboard"
           />
 
           {/* Main Panel Efficiency Score */}

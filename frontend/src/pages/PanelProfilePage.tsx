@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { panelApi } from '@/lib/api/panel.api';
-import { ArrowLeft, UserCircle, Target, TrendingUp, Calendar, Download, Mail, Fingerprint } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+import { ArrowLeft, UserCircle, Target, TrendingUp, Calendar, Download, Mail, Fingerprint, FileText } from 'lucide-react';
 import {
   Tooltip,
   ResponsiveContainer,
@@ -68,89 +70,83 @@ export default function PanelProfilePage() {
     );
   }
 
-  // Format data for radar chart
-  const radarData = Object.entries(data.dimensionAverages).map(([subject, score]) => ({
-    subject,
-    score,
-    fullMark: subject.includes('Mandatory') || subject.includes('Depth') ? 2.5 : 1.0 // rough approximation for visuals
-  }));
-
-  // Format data for line chart
-  const lineData = [...data.history].reverse().map((h, i) => ({
-    name: `Interview ${i + 1}`,
-    score: h.score,
-    date: h.date,
-    detail: h.candidateName
-  }));
-
-  const scoreCategory = data.averageScore >= 8 ? 'text-emerald-400' : data.averageScore >= 5 ? 'text-orange-400' : 'text-red-400';
-
-  function downloadReport() {
+  function generateReportHTML(): string {
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
     const historyRows = data!.history.map(h => `
       <tr>
-        <td style="padding:8px;border-bottom:1px solid #eee;">${h.jobId}</td>
-        <td style="padding:8px;border-bottom:1px solid #eee;">${h.candidateName}</td>
-        <td style="padding:8px;border-bottom:1px solid #eee;text-align:right"><strong>${h.score.toFixed(1)}</strong></td>
+        <td style="padding:10px;border-bottom:1px solid #f3f4f6;">${h.jobId}</td>
+        <td style="padding:10px;border-bottom:1px solid #f3f4f6;">${h.candidateName}</td>
+        <td style="padding:10px;border-bottom:1px solid #f3f4f6;text-align:right"><strong style="color:#6366f1">${h.score.toFixed(1)}</strong></td>
       </tr>
     `).join('');
 
-    const html = `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8" />
   <title>Panelist Report — ${data!.panelName}</title>
   <style>
-    body { font-family: 'Segoe UI', Arial, sans-serif; padding: 30px; color: #1f2937; }
-    .header { font-size: 24px; font-weight: bold; border-bottom: 2px solid #6366f1; padding-bottom: 10px; margin-bottom: 20px; }
-    .meta { display: flex; gap: 40px; margin-bottom: 30px; font-size: 14px; }
-    .meta-box { background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; width: 100%; }
-    .meta-title { font-size: 11px; color: #6b7280; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
-    th { background: #f3f4f6; padding: 10px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #1f2937; background: #fff; line-height: 1.5; }
+    .header { border-bottom: 2px solid #6366f1; padding-bottom: 15px; margin-bottom: 25px; }
+    .title { font-size: 24px; font-weight: bold; color: #111827; }
+    .meta-container { display: flex; gap: 20px; margin-bottom: 30px; }
+    .meta-box { flex: 1; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
+    .meta-label { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .meta-value { font-size: 15px; font-weight: 600; color: #1e293b; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th { background: #f1f5f9; padding: 12px 10px; text-align: left; font-size: 11px; text-transform: uppercase; color: #475569; font-weight: 700; border-bottom: 2px solid #e2e8f0; }
+    .section-title { font-size: 18px; font-weight: 700; color: #1e293b; margin-top: 30px; margin-bottom: 15px; border-left: 4px solid #6366f1; padding-left: 12px; }
   </style>
 </head>
 <body>
   <div class="header">
-    <div style="display:flex; align-items:center; gap:12px; margin-bottom: 10px;">
-      <img src="${window.location.origin}/INDIUM LOGO.png" alt="Indium Logo" style="height:32px; object-fit:contain;" />
+    <div style="display:flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+      <img src="${window.location.origin}/INDIUM LOGO.png" alt="Indium Logo" style="height:35px; object-fit:contain;" />
+      <div style="text-align: right; font-size: 10px; color: #94a3b8;">${dateStr} · ${timeStr}</div>
     </div>
-    Panel Member Profile: ${data!.panelName}
-    <div style="font-size: 12px; font-weight: normal; color: #6b7280; margin-top: 5px;">Generated on ${dateStr} ${timeStr}</div>
+    <div class="title">Panel Member Profile: ${data!.panelName}</div>
   </div>
   
-  <div class="meta">
+  <div class="meta-container">
     <div class="meta-box">
-      <div class="meta-title">Details</div>
-      <div><strong>ID:</strong> ${data!.employeeId}</div>
-      <div style="margin-top:4px"><strong>Email:</strong> ${data!.email}</div>
+      <div class="meta-label">Employee Details</div>
+      <div class="meta-value">ID: ${data!.employeeId}</div>
+      <div class="meta-value" style="font-size: 13px; font-weight: 400; margin-top: 4px;">${data!.email}</div>
     </div>
     <div class="meta-box">
-      <div class="meta-title">Performance summary</div>
-      <div><strong>Interviews Conducted:</strong> ${data!.totalEvaluations}</div>
-      <div style="margin-top:4px; font-size: 18px"><strong>Average Score:</strong> ${data!.averageScore.toFixed(1)} / 10</div>
+      <div class="meta-label">Performance Overview</div>
+      <div class="meta-value">Interviews: ${data!.totalEvaluations}</div>
+      <div class="meta-value" style="color: #6366f1; font-size: 20px; margin-top: 4px;">Avg Score: ${data!.averageScore.toFixed(1)} / 10</div>
     </div>
   </div>
 
-  <div style="font-weight: bold; margin-bottom: 10px; font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Evaluation History</div>
+  <div class="section-title">Evaluation History</div>
   <table>
     <thead>
       <tr>
-        <th>Candidate ID</th>
-        <th>Candidate</th>
-        <th style="text-align:right">Score</th>
+        <th>Job ID / Reference</th>
+        <th>Candidate Name</th>
+        <th style="text-align:right">Panel Score</th>
       </tr>
     </thead>
     <tbody>
       ${historyRows}
     </tbody>
   </table>
+
+  <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 10px; color: #94a3b8; text-align: center;">
+    Generated by Panel Pulse AI · ${window.location.host}
+  </div>
 </body>
 </html>`;
+  }
 
+  const handleExportHTML = () => {
+    const html = generateReportHTML();
+    const now = new Date();
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -160,7 +156,69 @@ export default function PanelProfilePage() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }
+  };
+
+  const handleExportPDF = async () => {
+    const html = generateReportHTML();
+    const now = new Date();
+    
+    // Create a temporary container for rendering
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    Object.assign(container.style, {
+      position: 'absolute', left: '-9999px', top: '0', width: '800px', backgroundColor: '#ffffff', color: '#1f2937', padding: '40px'
+    });
+    document.body.appendChild(container);
+
+    try {
+      const canvas = await html2canvas(container, {
+        scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false, windowWidth: 800
+      });
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+      
+      // Calculate pixels per page on the canvas based on A4 aspect ratio
+      const pxPerPage = (canvasWidth * pdfHeight) / pdfWidth;
+      const totalPages = Math.ceil(canvasHeight / pxPerPage);
+
+      for (let i = 0; i < totalPages; i++) {
+        if (i > 0) pdf.addPage();
+        
+        const srcY = i * pxPerPage;
+        const srcH = Math.min(pxPerPage, canvasHeight - srcY);
+        
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvasWidth;
+        pageCanvas.height = pxPerPage;
+        const ctx = pageCanvas.getContext('2d');
+        
+        if (ctx) {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+          ctx.drawImage(canvas, 0, srcY, canvasWidth, srcH, 0, 0, canvasWidth, srcH);
+          
+          const pageImgData = pageCanvas.toDataURL('image/jpeg', 0.9);
+          pdf.addImage(pageImgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+          
+          // Page Footer
+          pdf.setFontSize(8);
+          pdf.setTextColor(150, 150, 150);
+          pdf.text(`Page ${i + 1} of ${totalPages}`, pdfWidth - 30, pdfHeight - 10);
+        }
+      }
+      
+      pdf.save(`panelist-profile-${data!.panelName.replace(/\s+/g, '-')}-${now.toISOString().slice(0, 10)}.pdf`);
+    } catch (error) {
+      console.error('PDF Export failed:', error);
+    } finally {
+      document.body.removeChild(container);
+    }
+  };
 
   return (
     <AppShell>
@@ -175,15 +233,24 @@ export default function PanelProfilePage() {
               <ArrowLeft className="w-4 h-4" />
               Back to Directory
             </button>
-            <button
-              onClick={downloadReport}
-              className="flex items-center gap-2 text-sm bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 px-4 py-2 rounded-lg border border-indigo-500/20 transition-colors font-medium"
-            >
-              <Download className="w-4 h-4" />
-              Export Profile
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleExportHTML}
+                className="flex items-center gap-2 text-sm bg-white/5 text-text-primary hover:bg-white/10 px-4 py-2 rounded-lg border border-white/10 transition-colors font-medium"
+              >
+                <Download className="w-4 h-4 text-indigo-400" />
+                Export HTML
+              </button>
+              <button
+                onClick={handleExportPDF}
+                className="flex items-center gap-2 text-sm bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 px-4 py-2 rounded-lg border border-indigo-500/20 transition-colors font-medium"
+              >
+                <FileText className="w-4 h-4" />
+                Export PDF
+              </button>
+            </div>
           </div>
-
+          {/* Rest of the profile remains same ... */}
           <div className="flex items-start justify-between bg-bg-card border border-white/[0.06] p-6 rounded-xl">
             <div className="flex items-center gap-5">
               <div className="w-16 h-16 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-2xl uppercase border border-indigo-500/30">
@@ -216,35 +283,9 @@ export default function PanelProfilePage() {
               <div>
                 <p className="text-xs text-text-muted uppercase tracking-wider font-semibold mb-1">Avg Score</p>
                 <div className="flex items-baseline gap-1 justify-center">
-                  <span className={`text-2xl font-bold ${scoreCategory}`}>{data.averageScore.toFixed(1)}</span>
+                  <span className={`text-2xl font-bold ${data.averageScore >= 8 ? 'text-emerald-400' : 'text-orange-400'}`}>{data.averageScore.toFixed(1)}</span>
                   <span className="text-sm text-text-muted">/ 10</span>
                 </div>
-              </div>
-            </div>
-            <div className="bg-bg-card border border-white/[0.06] p-6 rounded-xl flex flex-col hidden">
-              <div className="flex items-center gap-2 mb-6">
-                <Target className="w-5 h-5 text-indigo-400" />
-                <h2 className="text-lg font-semibold text-text-primary">Dimension Strengths</h2>
-              </div>
-              <div className="flex-1 min-h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                    <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#9ca3af', fontSize: 10 }} />
-                    <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={false} axisLine={false} />
-                    <Radar
-                      name={data.panelName}
-                      dataKey="score"
-                      stroke="#818cf8"
-                      fill="#818cf8"
-                      fillOpacity={0.4}
-                    />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#1e1e28', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                      itemStyle={{ color: '#fff' }}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
               </div>
             </div>
           </div>

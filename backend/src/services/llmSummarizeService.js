@@ -2,11 +2,16 @@ const https = require('https');
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_MODEL = process.env.GROQ_MODEL_NAME || 'llama-3.3-70b-versatile';
+// Ollama (local) — preferred when OLLAMA_BASE_URL is set
+const OLLAMA_BASE = (process.env.OLLAMA_BASE_URL || '').replace(/\/$/, '');
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL_NAME || GROQ_MODEL;
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // ms
 
-if (!GROQ_API_KEY) {
-  console.warn('⚠️  GROQ_API_KEY not set in .env');
+if (!GROQ_API_KEY && !OLLAMA_BASE) {
+  console.warn('⚠️  No LLM provider configured: set GROQ_API_KEY or OLLAMA_BASE_URL');
+} else if (OLLAMA_BASE) {
+  console.log(`🤖 LLM provider: Ollama (${OLLAMA_BASE}) model=${OLLAMA_MODEL}`);
 }
 
 /**
@@ -31,8 +36,8 @@ async function summarizeResults(query, input, options = {}) {
     maxResults = 5
   } = options;
 
-  if (!GROQ_API_KEY) {
-    throw new Error('GROQ_API_KEY not configured');
+  if (!GROQ_API_KEY && !OLLAMA_BASE) {
+    throw new Error('No LLM provider configured (set GROQ_API_KEY or OLLAMA_BASE_URL)');
   }
 
   if (!query || query.trim().length === 0) {
@@ -283,18 +288,30 @@ function _estimateLength(text) {
 }
 
 /**
- * Call GROQ API with retry logic
+ * Call LLM API with retry logic (Ollama preferred, GROQ fallback)
  */
 async function _callGroqAPI(prompt) {
-  let lastError;
+  if (OLLAMA_BASE) {
+    let lastError;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        return await _makeOllamaRequest(prompt);
+      } catch (err) {
+        lastError = err;
+        console.warn(`[LLMSummarize] Ollama attempt ${attempt}/${MAX_RETRIES} failed:`, err.message);
+        if (attempt < MAX_RETRIES) await new Promise(r => setTimeout(r, RETRY_DELAY * attempt));
+      }
+    }
+    throw new Error(`Ollama failed after ${MAX_RETRIES} attempts: ${lastError.message}`);
+  }
 
+  let lastError;
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       return await _makeGroqRequest(prompt);
     } catch (err) {
       lastError = err;
       console.warn(`[LLMSummarize] GROQ attempt ${attempt}/${MAX_RETRIES} failed:`, err.message);
-
       if (attempt < MAX_RETRIES) {
         await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
       }
@@ -372,6 +389,59 @@ function _makeGroqRequest(prompt) {
       reject(new Error('GROQ API request timeout'));
     });
 
+    req.write(payload);
+    req.end();
+  });
+}
+
+/**
+ * Make HTTP request to local Ollama server (OpenAI-compatible endpoint)
+ */
+function _makeOllamaRequest(prompt) {
+  return new Promise((resolve, reject) => {
+    const httpLib = OLLAMA_BASE.startsWith('https://') ? require('https') : require('http');
+    const url = new URL(OLLAMA_BASE + '/v1/chat/completions');
+    const payload = JSON.stringify({
+      model: OLLAMA_MODEL,
+      messages: [
+        { role: 'system', content: 'You are a professional summarizer and content synthesizer. Provide clear, concise, well-structured summaries.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.5,
+      max_tokens: 2000,
+      stream: false
+    });
+
+    const options = {
+      hostname: url.hostname,
+      port: url.port || (url.protocol === 'https:' ? 443 : 80),
+      path: url.pathname,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(payload)
+      },
+      timeout: 60000
+    };
+
+    const req = httpLib.request(options, (res) => {
+      let body = '';
+      res.on('data', (chunk) => { body += chunk; });
+      res.on('end', () => {
+        if (res.statusCode >= 400) return reject(new Error(`Ollama ${res.statusCode}: ${body}`));
+        try {
+          const response = JSON.parse(body);
+          const content = response.choices?.[0]?.message?.content?.trim();
+          if (!content) return reject(new Error('Empty Ollama response'));
+          resolve(content);
+        } catch (err) {
+          reject(new Error(`Failed to parse Ollama response: ${err.message}`));
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('Ollama request timeout')); });
     req.write(payload);
     req.end();
   });

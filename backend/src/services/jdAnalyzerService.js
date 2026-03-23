@@ -93,57 +93,57 @@ Provide the skill classifications as per the specified format.`;
 }
 
 /**
- * Call GROQ API with retry logic
- * 
+ * Call LLM API with retry logic (Ollama preferred, GROQ fallback)
+ *
  * @private
- * @param {string} userPrompt - The prompt to send to GROQ
+ * @param {string} userPrompt - The prompt to send to the LLM
  * @returns {Promise<string>} LLM response text
  */
 async function _callGroqWithRetry(userPrompt) {
   const maxAttempts = 3;
+  const ollamaBase = (process.env.OLLAMA_BASE_URL || '').replace(/\/$/, '');
+  const ollamaModel = process.env.OLLAMA_MODEL_NAME || process.env.GROQ_MODEL_NAME || 'llama-3.3-70b-versatile';
   const groqApiKey = process.env.GROQ_API_KEY;
   const groqModel = process.env.GROQ_MODEL_NAME || 'llama-3.3-70b-versatile';
 
-  if (!groqApiKey) {
-    throw new Error('GROQ_API_KEY not configured in environment');
+  if (!ollamaBase && !groqApiKey) {
+    throw new Error('No LLM provider configured (set GROQ_API_KEY or OLLAMA_BASE_URL)');
   }
+
+  // Use Ollama when OLLAMA_BASE_URL is configured, otherwise fall back to GROQ
+  const apiUrl = ollamaBase
+    ? `${ollamaBase}/v1/chat/completions`
+    : 'https://api.groq.com/openai/v1/chat/completions';
+  const model = ollamaBase ? ollamaModel : groqModel;
+  const headers = { 'Content-Type': 'application/json' };
+  if (!ollamaBase) headers['Authorization'] = `Bearer ${groqApiKey}`;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       const response = await axios.post(
-        'https://api.groq.com/openai/v1/chat/completions',
+        apiUrl,
         {
-          model: groqModel,
+          model,
           messages: [
-            {
-              role: 'system',
-              content: SYSTEM_PROMPT
-            },
-            {
-              role: 'user',
-              content: userPrompt
-            }
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: userPrompt }
           ],
           temperature: 0.7,
           max_tokens: 1000,
-          top_p: 1
+          top_p: 1,
+          stream: false
         },
-        {
-          headers: {
-            'Authorization': `Bearer ${groqApiKey}`,
-            'Content-Type': 'application/json'
-          },
-          timeout: 30000 // 30 second timeout
-        }
+        { headers, timeout: 60000 }
       );
 
       if (response.data && response.data.choices && response.data.choices[0]) {
         return response.data.choices[0].message.content;
       }
 
-      throw new Error('Invalid response format from GROQ API');
+      throw new Error('Invalid response format from LLM API');
     } catch (error) {
-      console.error(`Attempt ${attempt}/${maxAttempts} failed:`, error.message);
+      const provider = ollamaBase ? 'Ollama' : 'GROQ';
+      console.error(`[JDAnalyzer] ${provider} attempt ${attempt}/${maxAttempts} failed:`, error.message);
 
       if (attempt === maxAttempts) {
         throw new Error(`Failed after ${maxAttempts} attempts: ${error.message}`);

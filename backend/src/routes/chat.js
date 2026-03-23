@@ -5,6 +5,9 @@ const https = require('https');
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_MODEL = process.env.GROQ_MODEL_NAME || 'llama-3.3-70b-versatile';
+// Ollama (local) — preferred when OLLAMA_BASE_URL is set
+const OLLAMA_BASE = (process.env.OLLAMA_BASE_URL || '').replace(/\/$/, '');
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL_NAME || GROQ_MODEL;
 
 const CHAT_SYSTEM_PROMPT = `You are PanelPulse AI Assistant — an expert HR analytics and data science consultant for the PanelPulse platform.
 
@@ -58,52 +61,73 @@ INTERPRETATION RANGE:
 - 8.0–10.0: GOOD (Exceptional evaluation quality and alignment)`;
 
 /**
- * Call GROQ API for chat completion
+ * Call LLM for chat completion — uses Ollama (local) when OLLAMA_BASE_URL is set, otherwise GROQ
  */
 async function callGroqChat(messages) {
   return new Promise((resolve, reject) => {
-    if (!GROQ_API_KEY) {
-      return reject(new Error('GROQ_API_KEY not configured'));
+    if (!OLLAMA_BASE && !GROQ_API_KEY) {
+      return reject(new Error('No LLM provider configured (set GROQ_API_KEY or OLLAMA_BASE_URL)'));
     }
 
+    const model = OLLAMA_BASE ? OLLAMA_MODEL : GROQ_MODEL;
     const body = JSON.stringify({
-      model: GROQ_MODEL,
+      model,
       messages,
       temperature: 0.0,
       max_tokens: 1536,
       top_p: 1.0,
+      stream: false
     });
 
-    const options = {
-      hostname: 'api.groq.com',
-      path: '/openai/v1/chat/completions',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
-        'Content-Length': Buffer.byteLength(body),
-      },
-    };
+    let reqOptions;
+    let httpLib;
+    if (OLLAMA_BASE) {
+      const url = new URL(OLLAMA_BASE + '/v1/chat/completions');
+      httpLib = url.protocol === 'https:' ? https : require('http');
+      reqOptions = {
+        hostname: url.hostname,
+        port: url.port || (url.protocol === 'https:' ? 443 : 80),
+        path: url.pathname,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body),
+        },
+        timeout: 60000
+      };
+    } else {
+      httpLib = https;
+      reqOptions = {
+        hostname: 'api.groq.com',
+        path: '/openai/v1/chat/completions',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
+          'Content-Length': Buffer.byteLength(body),
+        },
+      };
+    }
 
-    const req = https.request(options, (res) => {
+    const req = httpLib.request(reqOptions, (res) => {
       let data = '';
       res.on('data', (chunk) => { data += chunk; });
       res.on('end', () => {
         try {
           const parsed = JSON.parse(data);
           if (parsed.error) {
-            return reject(new Error(parsed.error.message || 'GROQ API error'));
+            return reject(new Error(parsed.error.message || 'LLM API error'));
           }
           const content = parsed.choices?.[0]?.message?.content;
-          if (!content) return reject(new Error('Empty response from GROQ'));
+          if (!content) return reject(new Error('Empty response from LLM'));
           resolve(content);
         } catch (e) {
-          reject(new Error('Failed to parse GROQ response'));
+          reject(new Error('Failed to parse LLM response'));
         }
       });
     });
 
-    req.on('error', (e) => reject(new Error(`GROQ request failed: ${e.message}`)));
+    req.on('error', (e) => reject(new Error(`LLM request failed: ${e.message}`)));
     req.write(body);
     req.end();
   });
@@ -348,10 +372,11 @@ router.post('/', async (req, res) => {
       { role: 'user', content: trimmedMessage },
     ];
 
-    // Step 4: Call GROQ for AI response
-    console.log(`[Chat] Calling GROQ with ${groqMessages.length} messages`);
+    // Step 4: Call LLM for AI response (Ollama or GROQ)
+    const provider = OLLAMA_BASE ? 'Ollama' : 'GROQ';
+    console.log(`[Chat] Calling ${provider} with ${groqMessages.length} messages`);
     const reply = await callGroqChat(groqMessages);
-    console.log(`[Chat] GROQ reply length: ${reply.length} chars`);
+    console.log(`[Chat] ${provider} reply length: ${reply.length} chars`);
 
     return res.status(200).json({
       success: true,
@@ -365,14 +390,14 @@ router.post('/', async (req, res) => {
   } catch (err) {
     console.error('[Chat] Error:', err.message);
 
-    if (err.message.includes('GROQ_API_KEY')) {
+    if (err.message.includes('GROQ_API_KEY') || err.message.includes('No LLM provider')) {
       return res.status(503).json({
         error: 'AI service not configured',
-        details: 'GROQ API key is missing',
+        details: 'No LLM provider configured (set OLLAMA_BASE_URL or GROQ_API_KEY)',
       });
     }
 
-    if (err.message.includes('GROQ')) {
+    if (err.message.includes('LLM') || err.message.includes('GROQ')) {
       return res.status(503).json({
         error: 'AI service temporarily unavailable',
         details: err.message,

@@ -2,11 +2,16 @@ const https = require('https');
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_MODEL = process.env.GROQ_MODEL_NAME || 'llama-3.3-70b-versatile';
+// Ollama (local) settings — if OLLAMA_BASE_URL is set, prefer Ollama over GROQ
+const OLLAMA_BASE = (process.env.OLLAMA_BASE_URL || '').replace(/\/$/, '');
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL_NAME || GROQ_MODEL;
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // ms
 
-if (!GROQ_API_KEY) {
-  console.warn('⚠️  GROQ_API_KEY not set in .env');
+if (!GROQ_API_KEY && !OLLAMA_BASE) {
+  console.warn('⚠️  No LLM provider configured: set GROQ_API_KEY or OLLAMA_BASE_URL');
+} else if (OLLAMA_BASE) {
+  console.log(`🤖 LLM provider: Ollama (${OLLAMA_BASE}) model=${OLLAMA_MODEL}`);
 }
 
 /**
@@ -28,8 +33,8 @@ async function rerankWithLLM(query, results, options = {}) {
     evaluationFocus = 'relevance' // 'relevance', 'expertise_match', 'interview_quality'
   } = options;
 
-  if (!GROQ_API_KEY) {
-    throw new Error('GROQ_API_KEY not configured');
+  if (!GROQ_API_KEY && !OLLAMA_BASE) {
+    throw new Error('No LLM provider configured (set GROQ_API_KEY or OLLAMA_BASE_URL)');
   }
 
   if (!query || query.trim().length === 0) {
@@ -179,15 +184,19 @@ JSON Array (no other text):`;
  * Call GROQ API with retry logic
  */
 async function _callGroqAPI(prompt, focus) {
+  // Provider switch: prefer Ollama when OLLAMA_BASE is configured
+  if (OLLAMA_BASE) {
+    return await _callOllamaAPI(prompt);
+  }
+
   let lastError;
-  
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       return await _makeGroqRequest(prompt);
     } catch (err) {
       lastError = err;
       console.warn(`[LLMRerank] GROQ attempt ${attempt}/${MAX_RETRIES} failed:`, err.message);
-      
+
       if (attempt < MAX_RETRIES) {
         await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
       }
@@ -195,6 +204,24 @@ async function _callGroqAPI(prompt, focus) {
   }
 
   throw new Error(`GROQ API failed after ${MAX_RETRIES} attempts: ${lastError.message}`);
+}
+
+
+/**
+ * Call Ollama (local) and return validated ranking array identical to GROQ path
+ */
+async function _callOllamaAPI(prompt) {
+  let lastError;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      return await _makeOllamaRequest(prompt);
+    } catch (err) {
+      lastError = err;
+      console.warn(`[LLMRerank] Ollama attempt ${attempt}/${MAX_RETRIES} failed:`, err.message);
+      if (attempt < MAX_RETRIES) await new Promise((r) => setTimeout(r, RETRY_DELAY * attempt));
+    }
+  }
+  throw new Error(`Ollama API failed after ${MAX_RETRIES} attempts: ${lastError.message}`);
 }
 
 /**
@@ -251,15 +278,8 @@ function _makeGroqRequest(prompt) {
           }
 
           const content = response.choices[0].message.content.trim();
-          
           // Extract JSON from response (handle code blocks)
-          let jsonStr = content;
-          if (content.includes('```json')) {
-            jsonStr = content.split('```json')[1].split('```')[0].trim();
-          } else if (content.includes('```')) {
-            jsonStr = content.split('```')[1].split('```')[0].trim();
-          }
-
+          const jsonStr = _extractJsonFromModelResponse(content);
           const rankedResults = JSON.parse(jsonStr);
 
           if (!Array.isArray(rankedResults)) {
@@ -290,6 +310,92 @@ function _makeGroqRequest(prompt) {
 
     req.write(payload);
     req.end();
+  });
+}
+
+/**
+ * Extract JSON array string from model text response (handles ```json blocks and plain JSON)
+ */
+function _extractJsonFromModelResponse(content) {
+  if (!content) throw new Error('Empty model response');
+  let jsonStr = content;
+  if (content.includes('```json')) {
+    jsonStr = content.split('```json')[1].split('```')[0].trim();
+  } else if (content.includes('```')) {
+    // take content inside first fenced block
+    jsonStr = content.split('```')[1].split('```')[0].trim();
+  } else {
+    // Try to find first '[' ... ']' block
+    const start = content.indexOf('[');
+    const end = content.lastIndexOf(']');
+    if (start !== -1 && end !== -1 && end > start) jsonStr = content.slice(start, end + 1).trim();
+  }
+  return jsonStr;
+}
+
+/**
+ * Make HTTP request to local Ollama (OpenAI-compatible endpoint) and return validated ranking array
+ */
+function _makeOllamaRequest(prompt) {
+  return new Promise((resolve, reject) => {
+    try {
+      const httpLib = OLLAMA_BASE.startsWith('https://') ? require('https') : require('http');
+      const url = new URL(OLLAMA_BASE + '/v1/chat/completions');
+      const payload = JSON.stringify({
+        model: OLLAMA_MODEL,
+        messages: [
+          { role: 'system', content: 'You are a JSON-generating ranking service. Return only valid JSON arrays.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.3,
+        max_tokens: 2000,
+        stream: false
+      });
+
+      const options = {
+        hostname: url.hostname,
+        port: url.port || (url.protocol === 'https:' ? 443 : 80),
+        path: url.pathname,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload),
+        },
+        timeout: 60000,
+      };
+
+      const req = httpLib.request(options, (res) => {
+        let body = '';
+        res.on('data', (chunk) => { body += chunk; });
+        res.on('end', () => {
+          if (res.statusCode && res.statusCode >= 400) return reject(new Error(`Ollama ${res.statusCode}: ${body}`));
+          try {
+            const response = JSON.parse(body);
+            const content = response.choices?.[0]?.message?.content?.trim();
+            if (!content) return reject(new Error('Empty Ollama response'));
+            const jsonStr = _extractJsonFromModelResponse(content);
+            const rankedResults = JSON.parse(jsonStr);
+            if (!Array.isArray(rankedResults)) return reject(new Error('Ollama response must be a JSON array'));
+            const validated = rankedResults.map((item, index) => ({
+              id: item.id || item.document_id || '',
+              score: Math.min(10, Math.max(1, item.score || item.rank || (10 - index))),
+              reason: item.reason || item.explanation || '',
+              explanation: item.explanation || item.reason || ''
+            }));
+            resolve(validated);
+          } catch (err) {
+            reject(new Error(`Failed to parse Ollama response: ${err.message}`));
+          }
+        });
+      });
+
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(); reject(new Error('Ollama request timeout')); });
+      req.write(payload);
+      req.end();
+    } catch (err) {
+      reject(err);
+    }
   });
 }
 

@@ -421,7 +421,7 @@ function _makeOllamaRequest(prompt) {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(payload)
       },
-      timeout: 60000
+      timeout: 180000
     };
 
     const req = httpLib.request(options, (res) => {

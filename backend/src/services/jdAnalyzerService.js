@@ -130,7 +130,7 @@ async function _callGroqWithRetry(userPrompt) {
         ? { model, messages, stream: false, options: { temperature: 0.7, num_predict: 1000 } }
         : { model, messages, temperature: 0.7, max_tokens: 1000, top_p: 1, stream: false };
 
-      const response = await axios.post(apiUrl, body, { headers, timeout: 60000 });
+      const response = await axios.post(apiUrl, body, { headers, timeout: ollamaBase ? 180000 : 30000 });
 
       const rawContent = ollamaBase
         ? (response.data?.message?.content || response.data?.message?.thinking || '')

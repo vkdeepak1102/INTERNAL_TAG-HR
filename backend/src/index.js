@@ -64,8 +64,6 @@ app.use('/api/v1/jd', requireAuth, jdRoutes);
 app.use('/api/v1/panel', requireAuth, panelRoutes);
 app.use('/api/v1/extract', requireAuth, extractRoutes);
 app.use('/api/v1/chat', requireAuth, chatRoutes);
-
-
 const port = PORT;
 
 async function start() {

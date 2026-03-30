@@ -50,7 +50,6 @@ RULES:
 6. NO conversational filler. NO thinking process.
 7. Return ONLY the bulleted list. No intro or outro text.`;
 
-
 const PANEL_SUMMARY_SYSTEM_PROMPT = `You are a Senior HR Manager reviewing a panel interview evaluation report.
 Write a detailed, professional assessment of the interview panel's performance.
 
